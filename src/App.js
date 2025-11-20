@@ -15,7 +15,7 @@ function App() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Learn React With Ekta  🥰
+          Learn Garam hai sathi ho React kaam chaina nabhaye   🥰
         </a>
       </header>
     </div>
