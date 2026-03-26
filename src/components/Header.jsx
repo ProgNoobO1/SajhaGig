@@ -1,44 +1,127 @@
-import { Link } from "react-router-dom";
+import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { colors, borderRadius } from "../constants/theme";
 
 export default function Header() {
-    return (
-      <header style={s.header}>
-        <div style={s.logo}>SajhaGig</div>
-        <div style={s.searchWrap}>
-          <input style={s.searchInput} placeholder="Search For Freelancers Or Services" />
-          <button style={s.searchBtn}>🔍</button>
-        </div>
-        <nav style={s.nav}>
-        <Link to="/findwork" style={s.navLink}>Find Work</Link>
-        <Link to="/browsegigs" style={s.navLink}>Browse Gigs</Link>
-        <Link to="/freelancerdashboard" style={s.navLink}>Dashboard</Link>
-        </nav>
-        <div style={s.headerRight}>
-          <div style={s.buyerToggle}><span style={s.dot}/>Buyer</div>
-          <div style={s.avatar}>👤</div>
-        </div>
-      </header>
-    );
-  }
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isBuyer = !location.pathname.startsWith("/freelancer");
 
-  const s = {
-    page: { fontFamily:"'Segoe UI',Arial,sans-serif", background:"#f1f5f9", minHeight:"100vh" },
-  
-    // Header
-    header: { background:"#1a2b6d", color:"#fff", display:"flex", alignItems:"center",
-              gap:12, padding:"12px 28px", flexWrap:"wrap" },
-    logo: { fontSize:22, fontWeight:700, fontStyle:"italic", color:"#fff", marginRight:8 },
-    searchWrap: { display:"flex", flex:1, minWidth:180, maxWidth:380 },
-    searchInput: { flex:1, padding:"8px 12px", border:"none", borderRadius:"6px 0 0 6px",
-                   fontSize:13, outline:"none" },
-    searchBtn: { background:"#3b5bdb", border:"none", color:"#fff", padding:"8px 12px",
-                 borderRadius:"0 6px 6px 0", cursor:"pointer" },
-    nav: { display:"flex", gap:18 },
-    navLink: { color:"#c7d2fe", textDecoration:"none", fontSize:14 },
-    headerRight: { display:"flex", alignItems:"center", gap:10, marginLeft:"auto" },
-    buyerToggle: { background:"#2563eb", color:"#fff", borderRadius:20, padding:"4px 14px",
-                   fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:6 },
-    dot: { width:10, height:10, background:"#fff", borderRadius:"50%", display:"inline-block" },
-    avatar: { width:36, height:36, background:"#374151", borderRadius:"50%",
-              display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 },
-    }  
+  const dashboardPath = isBuyer ? "/client/dashboard" : "/freelancer/dashboard";
+
+  const navLinks = [
+    { label: "Find Work", path: "/find-work" },
+    { label: "Browse Gigs", path: "/browse-gigs" },
+    { label: "Dashboard", path: dashboardPath },
+  ];
+
+  const handleToggle = () => {
+    if (isBuyer) {
+      navigate("/freelancer/dashboard");
+    } else {
+      navigate("/client/dashboard");
+    }
+  };
+
+  return (
+    <nav style={s.navbar}>
+      <Link to="/" style={s.logo}>SajhaGig</Link>
+
+      <div style={s.searchBox}>
+        <input placeholder="Search For Freelancers Or Services" style={s.searchInput} />
+        <button style={s.searchBtn}>🔍</button>
+      </div>
+
+      <div style={s.navLinks}>
+        {navLinks.map((link) => (
+          <Link key={link.label} to={link.path} style={s.navLink}>
+            {link.label}
+          </Link>
+        ))}
+      </div>
+
+      <div onClick={handleToggle} style={s.togglePill}>
+        <span style={{ ...s.toggleDot, background: isBuyer ? colors.success : "#9ca3af" }} />
+        <span style={{ color: colors.white, fontSize: 13, fontWeight: 600 }}>
+          {isBuyer ? "Buyer" : "Seller"}
+        </span>
+      </div>
+
+      <div style={s.userAvatar} />
+    </nav>
+  );
+}
+
+const s = {
+  navbar: {
+    background: colors.primary,
+    display: "flex",
+    alignItems: "center",
+    gap: 16,
+    padding: "12px 24px",
+    flexWrap: "wrap",
+  },
+  logo: {
+    color: colors.white,
+    fontWeight: 700,
+    fontSize: 20,
+    marginRight: 8,
+    textDecoration: "none",
+    fontStyle: "italic",
+  },
+  searchBox: {
+    display: "flex",
+    flex: 1,
+    maxWidth: 380,
+    borderRadius: borderRadius.md,
+    overflow: "hidden",
+  },
+  searchInput: {
+    flex: 1,
+    padding: "8px 12px",
+    border: "none",
+    outline: "none",
+    fontSize: 13,
+  },
+  searchBtn: {
+    background: colors.accentDark,
+    border: "none",
+    padding: "0 14px",
+    cursor: "pointer",
+    color: colors.white,
+    fontSize: 14,
+  },
+  navLinks: {
+    display: "flex",
+    gap: 20,
+    marginLeft: "auto",
+  },
+  navLink: {
+    color: "#c7d2fe",
+    textDecoration: "none",
+    fontSize: 14,
+  },
+  togglePill: {
+    background: colors.gray[600],
+    borderRadius: borderRadius.pill,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "4px 12px",
+    cursor: "pointer",
+    userSelect: "none",
+  },
+  toggleDot: {
+    width: 10,
+    height: 10,
+    borderRadius: "50%",
+    background: "#9ca3af",
+    display: "inline-block",
+  },
+  userAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: "50%",
+    background: colors.gray[600],
+  },
+};
