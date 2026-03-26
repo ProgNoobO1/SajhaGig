@@ -75,9 +75,19 @@ const JOB = {
     },
   ],
   howItWorks: [
-    { icon: "📝", title: "Create a profile", desc: "Highlight your skills and experience." },
-    { icon: "🔍", title: "Search for jobs", desc: "Browse and find jobs that match your skills." },
-    { icon: "📨", title: "Submit a proposal", desc: "Stand out and get noticed by clients." },
+    { img: "https://images.unsplash.com/photo-1596558450268-9c27524ba856?w=300&h=200&fit=crop", title: "Create your free profile", desc: "Highlight your skills and experience, show your portfolio, and set your ideal pay rate." },
+    { img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=300&h=200&fit=crop", title: "Work the way you want", desc: "Apply for jobs, create easy-to-buy projects, or access exclusive opportunities that come to you." },
+    { img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=300&h=200&fit=crop", title: "Get paid securely", desc: "From contract to payment, we help you work safely and get paid securely." },
+  ],
+  aboutStats: [
+    { value: "4.9/5", label: "(Average rating of clients by professionals)", hasStars: true },
+    { value: "G2 2021", label: "#1 freelance platform" },
+    { value: "49,000+", label: "Signed contract every week" },
+    { value: "$2.3B", label: "Freelancers earned on SajhaGIG in 2020" },
+  ],
+  otherClientJobs: [
+    { title: "Build a graphic", type: "Fixed-price" },
+    { title: "Graphic Design Needed for Creative Project", type: "Hourly" },
   ],
 };
 
@@ -268,14 +278,79 @@ export default function JobDetail() {
         <div style={st.divider} />
 
         {/* How it works */}
-        <section style={{ ...st.section, marginBottom: 0 }}>
+        <section style={st.section}>
           <h3 style={{ ...st.sectionTitle, fontSize: 20, marginBottom: 20 }}>How it works</h3>
           <div style={st.howGrid}>
             {JOB.howItWorks.map((item, i) => (
               <div key={i} style={st.howCard}>
-                <div style={st.howIcon}>{item.icon}</div>
+                <div style={st.howImgWrap}>
+                  <img src={item.img} alt={item.title} style={st.howImg} />
+                </div>
                 <h4 style={st.howTitle}>{item.title}</h4>
                 <p style={st.howDesc}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div style={st.createProfileRow}>
+            <span style={{ fontSize: 14, color: colors.text.secondary }}>Want to get started?</span>
+            <a href="/signup/freelancer" style={st.createProfileLink}>
+              Create a profile
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+            </a>
+          </div>
+        </section>
+
+        <div style={st.divider} />
+
+        {/* About SajhaGIG */}
+        <section style={st.section}>
+          <h3 style={{ ...st.sectionTitle, fontSize: 20, marginBottom: 20 }}>About SajhaGIG</h3>
+          <div style={st.statsGrid}>
+            {JOB.aboutStats.map((stat, i) => (
+              <div key={i}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  {stat.hasStars && <span style={{ color: colors.star, fontSize: 14 }}>★★★★★</span>}
+                  <span style={{ fontSize: 18, fontWeight: 700, color: colors.text.primary }}>{stat.value}</span>
+                </div>
+                <p style={{ fontSize: 13, color: colors.gray[500], margin: 0, lineHeight: 1.4 }}>{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div style={st.divider} />
+
+        {/* Find the best freelance jobs */}
+        <section style={st.section}>
+          <h3 style={{ ...st.sectionTitle, fontSize: 20, marginBottom: 8 }}>Find the best freelance jobs</h3>
+          <p style={{ fontSize: 14, color: colors.gray[600], margin: "0 0 18px", lineHeight: 1.6 }}>
+            Growing your career is as easy as creating a free profile and finding work like this that fits your skills.
+          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24 }}>
+            <button style={st.findWorkBtn} onClick={() => navigate("/find-work")}>Find Work</button>
+            <a href="#" style={st.watchDemo}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={colors.accent} stroke="none"><circle cx="12" cy="12" r="10" /><polygon points="10,8 16,12 10,16" fill="white" /></svg>
+              Watch a demo
+            </a>
+          </div>
+          <p style={{ fontSize: 13, color: colors.gray[500], margin: "0 0 12px" }}>Trusted by</p>
+          <div style={st.trustedRow}>
+            {["Microsoft", "airbnb", "bissell", "GoDaddy"].map((brand) => (
+              <span key={brand} style={st.trustedBrand}>{brand}</span>
+            ))}
+          </div>
+        </section>
+
+        <div style={st.divider} />
+
+        {/* Other open jobs by this Client */}
+        <section style={{ ...st.section, marginBottom: 0 }}>
+          <h3 style={{ ...st.sectionTitle, fontSize: 16 }}>Other open jobs by this Client ({JOB.otherClientJobs.length})</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {JOB.otherClientJobs.map((job, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <a href="#" style={{ fontSize: 14, color: colors.accent, textDecoration: "underline" }}>{job.title}</a>
+                <span style={{ fontSize: 13, color: colors.gray[500] }}>{job.type}</span>
               </div>
             ))}
           </div>
@@ -351,12 +426,25 @@ const st = {
   similarMeta: { fontSize: 12, color: colors.gray[500], margin: "0 0 10px" },
 
   // How it works
-  howGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 },
-  howCard: {
-    background: colors.primary, borderRadius: borderRadius.xl,
-    padding: "24px 20px", textAlign: "center",
+  howGrid: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 },
+  howCard: {},
+  howImgWrap: { borderRadius: borderRadius.lg, overflow: "hidden", marginBottom: 12, background: "#5BA892" },
+  howImg: { width: "100%", height: 160, objectFit: "cover", display: "block", mixBlendMode: "multiply", opacity: 0.85 },
+  howTitle: { fontSize: 15, fontWeight: 700, color: colors.text.primary, margin: "0 0 6px" },
+  howDesc: { fontSize: 13, color: colors.gray[500], margin: 0, lineHeight: 1.55 },
+  createProfileRow: { display: "flex", alignItems: "center", gap: 4, marginTop: 20, paddingTop: 16, borderTop: `1px solid ${colors.gray[200]}` },
+  createProfileLink: { display: "flex", alignItems: "center", gap: 4, fontSize: 14, fontWeight: 600, color: colors.text.primary, textDecoration: "underline", textUnderlineOffset: 2 },
+
+  // About stats
+  statsGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 24 },
+
+  // Find work CTA
+  findWorkBtn: {
+    padding: "10px 24px", background: colors.primary, color: "white",
+    border: "none", borderRadius: borderRadius.md, fontSize: 14,
+    fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
   },
-  howIcon: { fontSize: 32, marginBottom: 10 },
-  howTitle: { fontSize: 15, fontWeight: 700, color: "white", margin: "0 0 6px" },
-  howDesc: { fontSize: 12, color: "rgba(255,255,255,0.7)", margin: 0, lineHeight: 1.5 },
+  watchDemo: { display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: colors.accent, textDecoration: "none" },
+  trustedRow: { display: "flex", alignItems: "center", gap: 32 },
+  trustedBrand: { fontSize: 18, fontWeight: 700, color: colors.gray[400], letterSpacing: 0.5 },
 };
