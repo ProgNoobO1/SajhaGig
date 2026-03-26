@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//private/tmp/**)",
+      "Bash(rsvg-convert \"/Users/nabin/Downloads/Payment UI Browse Gigs.svg\" -o payment_ui.png)",
+      "Bash(python3 -c \":*)",
+      "Bash(npm run:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

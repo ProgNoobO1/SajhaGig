@@ -47,7 +47,7 @@ export default function Header() {
         </span>
       </div>
 
-      <div style={s.userAvatar} />
+      <div style={s.userAvatar} onClick={() => navigate(isBuyer ? "/client/profile" : "/freelancer/profile")} />
     </nav>
   );
 }
@@ -123,5 +123,6 @@ const s = {
     height: 32,
     borderRadius: "50%",
     background: colors.gray[600],
+    cursor: "pointer",
   },
 };
