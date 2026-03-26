@@ -79,7 +79,7 @@ const MsgIcon = () => (
 );
 
 // ── Profile Banner ──
-function ProfileBanner({ profile }) {
+function ProfileBanner({ profile, onEdit }) {
   return (
     <div style={st.banner}>
       <div style={st.bannerInner}>
@@ -123,7 +123,7 @@ function ProfileBanner({ profile }) {
           </div>
           {/* Actions */}
           <div style={st.actionCol}>
-            <a href="#" style={st.editLink}><EditIcon /> Edit Profile</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); onEdit && onEdit(); }} style={st.editLink}><EditIcon /> Edit Profile</a>
             <button style={st.msgBtn}><MsgIcon /> Message</button>
           </div>
         </div>
@@ -222,14 +222,97 @@ function MiniReview({ review }) {
   );
 }
 
+// ── Edit Profile Modal (Freelancer) ──
+function EditProfileModal({ onClose }) {
+  const [form, setForm] = useState({
+    fullName: PROFILE.name,
+    title: PROFILE.title,
+    rate: "25",
+    skills: PROFILE.skills.join(", "),
+    location: PROFILE.location,
+    about: PROFILE.about.join("\n\n"),
+    website: "",
+  });
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  const handleChange = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  return (
+    <div style={em.overlay} onClick={onClose}>
+      <div style={em.modal} onClick={(e) => e.stopPropagation()}>
+        <div style={em.header}>
+          <h2 style={em.title}>Edit Freelancer Profile</h2>
+          <button onClick={onClose} style={em.closeBtn}>&times;</button>
+        </div>
+
+        <div style={em.avatarRow}>
+          <div style={em.avatarPreview}>{PROFILE.initials}</div>
+          <button style={em.changePhotoBtn}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
+            Change Photo
+          </button>
+        </div>
+
+        <div style={em.row2}>
+          <div style={em.field}>
+            <label style={em.label}>Full Name</label>
+            <input style={em.input} value={form.fullName} onChange={handleChange("fullName")} />
+          </div>
+          <div style={em.field}>
+            <label style={em.label}>Title / Role</label>
+            <input style={em.input} value={form.title} onChange={handleChange("title")} placeholder="e.g. Full Stack Developer" />
+          </div>
+        </div>
+
+        <div style={em.row2}>
+          <div style={em.field}>
+            <label style={em.label}>Hourly Rate (Rs.)</label>
+            <input style={em.input} type="number" value={form.rate} onChange={handleChange("rate")} />
+          </div>
+          <div style={em.field}>
+            <label style={em.label}>Location</label>
+            <input style={em.input} value={form.location} onChange={handleChange("location")} />
+          </div>
+        </div>
+
+        <div style={em.field}>
+          <label style={em.label}>Skills <span style={em.hint}>(comma separated)</span></label>
+          <input style={em.input} value={form.skills} onChange={handleChange("skills")} placeholder="React, Node.js, MySQL..." />
+        </div>
+
+        <div style={em.field}>
+          <label style={em.label}>About <span style={em.hint}>(shown on your profile)</span></label>
+          <textarea style={em.textarea} rows={3} value={form.about} onChange={handleChange("about")} />
+        </div>
+
+        <div style={em.field}>
+          <label style={em.label}>Website / Portfolio URL <span style={em.hint}>(optional)</span></label>
+          <input style={em.input} value={form.website} onChange={handleChange("website")} placeholder="https://yoursite.com" />
+        </div>
+
+        <div style={em.actions}>
+          <button onClick={onClose} style={em.cancelBtn}>Cancel</button>
+          <button onClick={onClose} style={em.saveBtn}>Save Changes</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Page ──
 export default function FreelancerProfile() {
   const [activeTab, setActiveTab] = useState("Overview");
+  const [showEdit, setShowEdit] = useState(false);
 
   return (
     <div style={st.page}>
       <Header />
-      <ProfileBanner profile={PROFILE} />
+      <ProfileBanner profile={PROFILE} onEdit={() => setShowEdit(true)} />
+      {showEdit && <EditProfileModal onClose={() => setShowEdit(false)} />}
 
       <div style={st.container}>
         <TabNav active={activeTab} onChange={setActiveTab} />
@@ -429,5 +512,60 @@ const st = {
     padding: "6px 18px", background: colors.primary, color: "white",
     border: "none", borderRadius: borderRadius.md, fontSize: 12,
     fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+  },
+};
+
+// ── Edit Modal Styles ──
+const em = {
+  overlay: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000,
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  modal: {
+    background: "white", borderRadius: borderRadius.xl, padding: "28px 32px",
+    width: "min(520px, 92vw)", maxHeight: "90vh", overflowY: "auto",
+  },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 },
+  title: { fontSize: 18, fontWeight: 700, color: colors.text.primary, margin: 0 },
+  closeBtn: {
+    background: "none", border: "none", fontSize: 24, color: colors.gray[400],
+    cursor: "pointer", lineHeight: 1,
+  },
+  avatarRow: { display: "flex", alignItems: "center", gap: 16, marginBottom: 20 },
+  avatarPreview: {
+    width: 56, height: 56, borderRadius: borderRadius.lg, background: "#2dd4a8",
+    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: 20, fontWeight: 700,
+  },
+  changePhotoBtn: {
+    display: "flex", alignItems: "center", gap: 6, padding: "8px 16px",
+    border: `1px solid ${colors.gray[300]}`, borderRadius: borderRadius.md,
+    background: "white", fontSize: 13, fontWeight: 500, color: colors.text.secondary,
+    cursor: "pointer", fontFamily: "inherit",
+  },
+  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 },
+  field: { marginBottom: 14 },
+  label: { display: "block", fontSize: 13, fontWeight: 600, color: colors.text.primary, marginBottom: 6 },
+  hint: { fontWeight: 400, color: colors.gray[400] },
+  input: {
+    width: "100%", padding: "9px 12px", border: `1px solid ${colors.gray[300]}`,
+    borderRadius: borderRadius.md, fontSize: 14, fontFamily: "inherit",
+    outline: "none", boxSizing: "border-box",
+  },
+  textarea: {
+    width: "100%", padding: "9px 12px", border: `1px solid ${colors.gray[300]}`,
+    borderRadius: borderRadius.md, fontSize: 14, fontFamily: "inherit",
+    outline: "none", resize: "vertical", boxSizing: "border-box",
+  },
+  actions: { display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 },
+  cancelBtn: {
+    padding: "9px 22px", border: `1px solid ${colors.gray[300]}`, borderRadius: borderRadius.md,
+    background: "white", fontSize: 14, fontWeight: 600, color: colors.text.secondary,
+    cursor: "pointer", fontFamily: "inherit",
+  },
+  saveBtn: {
+    padding: "9px 22px", border: "none", borderRadius: borderRadius.md,
+    background: colors.primary, fontSize: 14, fontWeight: 600, color: "white",
+    cursor: "pointer", fontFamily: "inherit",
   },
 };
