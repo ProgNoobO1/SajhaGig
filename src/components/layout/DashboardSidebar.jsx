@@ -6,7 +6,7 @@ const CLIENT_LINKS = [
   { icon: "🏠", label: "Dashboard", path: "/client/dashboard" },
   { icon: "📁", label: "Projects", path: "/client/projects" },
   { icon: "⭐", label: "Reviews", path: "/client/reviews" },
-  { icon: "💬", label: "Chat", path: null },
+  { icon: "💬", label: "Chat", path: "/chat" },
   { icon: "🚪", label: "Logout", path: "/login" },
 ];
 
@@ -15,7 +15,7 @@ const FREELANCER_LINKS = [
   { icon: "📁", label: "Projects", path: "/freelancer/projects" },
   { icon: "⭐", label: "Reviews", path: "/freelancer/reviews" },
   { icon: "🗂️", label: "Portfolio", path: "/freelancer/portfolio" },
-  { icon: "💬", label: "Chat", path: null },
+  { icon: "💬", label: "Chat", path: "/chat" },
   { icon: "🚪", label: "Logout", path: "/login" },
 ];
 
