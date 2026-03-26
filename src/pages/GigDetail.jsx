@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { StarRating } from "../components/ui";
@@ -159,7 +159,7 @@ const ArrowButton = ({ direction, onClick }) => (
 );
 
 // ── Buy Card Component ──
-function BuyCard({ packages }) {
+function BuyCard({ packages, onContinue }) {
   const [activeTab, setActiveTab] = useState("basic");
   const tabs = [
     { key: "basic", label: "Basic" },
@@ -218,7 +218,7 @@ function BuyCard({ packages }) {
         </ul>
 
         {/* Continue Button */}
-        <button style={s.continueBtn}>
+        <button style={s.continueBtn} onClick={() => onContinue(pkg)}>
           Continue
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 12h14M12 5l7 7-7 7" />
@@ -422,10 +422,256 @@ function ReviewsSection({ reviews, sellerStats }) {
   );
 }
 
+// ── Checkout Modal ──
+function CheckoutModal({ pkg, onClose }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({ fullName: "", email: "", phone: "" });
+  const [touched, setTouched] = useState({});
+  const [triedNext, setTriedNext] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState("");
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = ""; };
+  }, []);
+
+  // Validation
+  const validate = () => {
+    const errs = {};
+    if (!form.fullName.trim()) errs.fullName = "Full name is required";
+    else if (form.fullName.trim().length < 2) errs.fullName = "Name must be at least 2 characters";
+
+    if (!form.email.trim()) errs.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) errs.email = "Enter a valid email address";
+
+    if (!form.phone.trim()) errs.phone = "Phone number is required";
+    else if (!/^[+]?[\d\s\-()]{7,15}$/.test(form.phone.trim())) errs.phone = "Enter a valid phone number";
+
+    return errs;
+  };
+
+  const errors = validate();
+  const showError = (field) => (touched[field] || triedNext) && errors[field];
+
+  const handleChange = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const handleBlur = (field) => () => setTouched((t) => ({ ...t, [field]: true }));
+
+  const priceNum = parseFloat(pkg.price.replace(/[₹,]/g, ""));
+  const serviceFee = Math.round(priceNum * 0.0154 * 100) / 100;
+  const total = (priceNum + serviceFee).toFixed(2);
+  const deliveryDays = pkg.delivery.match(/\d+/)?.[0] || "5";
+
+  const canContinue =
+    step === 1 ? Object.keys(errors).length === 0
+    : step === 2 ? selectedMethod !== ""
+    : true;
+
+  const handleNext = () => {
+    if (step === 1 && Object.keys(errors).length > 0) {
+      setTriedNext(true);
+      return;
+    }
+    setTriedNext(false);
+    if (step < 3) setStep(step + 1);
+    else {
+      alert("Payment initiated via " + (selectedMethod === "esewa" ? "eSewa" : "Khalti") + "!");
+      onClose();
+    }
+  };
+
+  const methods = [
+    { id: "esewa", name: "eSewa", desc: "Pay from your eSewa wallet instantly", color: "#60BB46" },
+    { id: "khalti", name: "Khalti", desc: "Pay via your Khalti digital wallet", color: "#5C2D91" },
+  ];
+
+  return (
+    <div style={m.overlay} onClick={onClose}>
+      <div style={m.wrapper} onClick={(e) => e.stopPropagation()}>
+        {/* Step Indicator */}
+        <div style={m.stepRow}>
+          {[{ n: 1, l: "Details" }, { n: 2, l: "Payment" }, { n: 3, l: "Confirm" }].map((s2, i) => (
+            <div key={s2.n} style={{ display: "flex", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{
+                  ...m.stepCircle,
+                  ...(step >= s2.n ? m.stepCircleActive : {}),
+                  ...(step > s2.n ? m.stepCircleDone : {}),
+                }}>
+                  {step > s2.n ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                  ) : s2.n}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: step >= s2.n ? 600 : 400, color: step >= s2.n ? "white" : "rgba(255,255,255,0.45)" }}>{s2.l}</span>
+              </div>
+              {i < 2 && <div style={m.stepLine} />}
+            </div>
+          ))}
+        </div>
+
+        {/* Back button */}
+        {step > 1 && (
+          <button onClick={() => setStep(step - 1)} style={m.backBtn}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7" /></svg>
+            Back
+          </button>
+        )}
+
+        <div style={m.contentRow}>
+          {/* LEFT CARD */}
+          <div style={m.leftCol}>
+            {step === 1 && (
+              <div style={m.card}>
+                <h2 style={m.cardTitle}>Details for Checkout</h2>
+                <div style={m.divider} />
+                <div style={m.formGroup}>
+                  <label style={m.label}>Full Name</label>
+                  <input type="text" placeholder="Enter your full name" value={form.fullName} onChange={handleChange("fullName")} onBlur={handleBlur("fullName")} style={{ ...m.input, ...(showError("fullName") ? m.inputError : {}) }} />
+                  {showError("fullName") && <span style={m.errorText}>{errors.fullName}</span>}
+                </div>
+                <div style={m.formGroup}>
+                  <label style={m.label}>Email</label>
+                  <input type="email" placeholder="Enter your email address" value={form.email} onChange={handleChange("email")} onBlur={handleBlur("email")} style={{ ...m.input, ...(showError("email") ? m.inputError : {}) }} />
+                  {showError("email") && <span style={m.errorText}>{errors.email}</span>}
+                </div>
+                <div style={{ marginBottom: 0 }}>
+                  <label style={m.label}>Phone Number</label>
+                  <input type="tel" placeholder="Enter your Phone Number" value={form.phone} onChange={handleChange("phone")} onBlur={handleBlur("phone")} style={{ ...m.input, ...(showError("phone") ? m.inputError : {}) }} />
+                  {showError("phone") && <span style={m.errorText}>{errors.phone}</span>}
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div style={m.card}>
+                <h2 style={m.cardTitle}>Payment Method</h2>
+                <div style={m.divider} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {methods.map((mt) => (
+                    <button key={mt.id} onClick={() => setSelectedMethod(mt.id)} style={{ ...m.paymentOption, ...(selectedMethod === mt.id ? m.paymentOptionActive : {}) }}>
+                      <div style={{ width: 40, height: 40, borderRadius: "50%", background: mt.color + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={mt.color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                      </div>
+                      <div style={{ flex: 1, textAlign: "left" }}>
+                        <div style={{ fontSize: 15, fontWeight: 600, color: colors.text.primary }}>{mt.name}</div>
+                        <div style={{ fontSize: 12, color: colors.gray[500], marginTop: 2 }}>{mt.desc}</div>
+                      </div>
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: `2px solid ${selectedMethod === mt.id ? colors.primary : colors.gray[300]}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {selectedMethod === mt.id && <div style={{ width: 10, height: 10, borderRadius: "50%", background: colors.primary }} />}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div style={m.card}>
+                <h2 style={m.cardTitle}>Confirm Your Details</h2>
+                <div style={m.divider} />
+                {[
+                  { label: "Full Name", value: form.fullName },
+                  { label: "Email", value: form.email },
+                  { label: "Phone Number", value: form.phone },
+                  { label: "Payment Method", value: selectedMethod === "esewa" ? "eSewa" : "Khalti" },
+                ].map((row) => (
+                  <div key={row.label} style={m.confirmRow}>
+                    <span style={{ fontSize: 13, color: colors.gray[500] }}>{row.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: colors.text.primary }}>{row.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: Order Summary */}
+          <div style={m.rightCol}>
+            <div style={m.card}>
+              <h2 style={{ ...m.cardTitle, textAlign: "center", fontSize: 18 }}>Order Summary</h2>
+              <div style={m.divider} />
+              <div style={{ padding: "0 4px" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: colors.text.primary, marginBottom: 16 }}>Price summary</div>
+                <div style={m.summaryRow}><span style={m.summaryLabel}>Subtotal</span><span style={m.summaryValue}>Rs.{priceNum.toLocaleString("en-IN")}</span></div>
+                <div style={m.summaryRow}><span style={m.summaryLabel}>Service Fee</span><span style={m.summaryValue}>Rs.{serviceFee.toLocaleString("en-IN")}</span></div>
+                <div style={m.summaryDivider} />
+                <div style={m.summaryRow}><span style={{ ...m.summaryLabel, fontWeight: 700, color: colors.text.primary }}>Total</span><span style={{ ...m.summaryValue, fontWeight: 700, color: colors.text.primary, fontSize: 15 }}>Rs.{total}</span></div>
+                <div style={m.summaryRow}><span style={m.summaryLabel}>Delivery Time</span><span style={m.summaryValue}>{deliveryDays} days</span></div>
+              </div>
+              <button onClick={handleNext} disabled={!canContinue} style={{ ...m.checkoutBtn, ...(canContinue ? {} : m.checkoutBtnDisabled) }}>
+                {step < 3 ? "Continue to Checkout" : "Confirm & Pay"}
+              </button>
+              <p style={m.termsText}>By paying you agree to our <span style={{ color: colors.accent, cursor: "pointer" }}>Terms & Refund Policy</span></p>
+            </div>
+          </div>
+        </div>
+
+        {/* Close button */}
+        <button onClick={onClose} style={m.closeBtn}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Modal Styles ──
+const m = {
+  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" },
+  wrapper: { position: "relative", background: colors.primary, borderRadius: borderRadius.xl + 4, padding: "36px 32px 40px", width: "min(880px, 94vw)", maxHeight: "90vh", overflowY: "auto" },
+  closeBtn: { position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.12)", border: "none", borderRadius: "50%", width: 34, height: 34, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+
+  // Steps
+  stepRow: { display: "flex", alignItems: "center", justifyContent: "center", gap: 0, marginBottom: 28 },
+  stepCircle: { width: 28, height: 28, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)", transition: "all 0.3s" },
+  stepCircleActive: { borderColor: "white", color: "white", background: "rgba(255,255,255,0.15)" },
+  stepCircleDone: { background: colors.success, borderColor: colors.success },
+  stepLine: { width: 50, height: 2, background: "rgba(255,255,255,0.2)", margin: "0 14px" },
+
+  // Back
+  backBtn: { display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: 0, marginBottom: 16, fontFamily: "inherit" },
+
+  // Layout
+  contentRow: { display: "flex", gap: 24, alignItems: "flex-start" },
+  leftCol: { flex: 1, minWidth: 0 },
+  rightCol: { width: 280, flexShrink: 0 },
+
+  // Card
+  card: { background: "white", borderRadius: borderRadius.xl, padding: 24, boxShadow: shadows.lg },
+  cardTitle: { fontSize: 17, fontWeight: 700, color: colors.text.primary, margin: 0 },
+  divider: { height: 1, background: colors.gray[200], margin: "14px 0 18px" },
+
+  // Form
+  formGroup: { marginBottom: 16 },
+  label: { display: "block", fontSize: 13, fontWeight: 500, color: colors.text.secondary, marginBottom: 6 },
+  input: { width: "100%", padding: "10px 14px", border: `1px solid ${colors.gray[300]}`, borderRadius: borderRadius.md, fontSize: 14, color: colors.text.primary, outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" },
+  inputError: { borderColor: colors.danger, boxShadow: `0 0 0 1px ${colors.danger}22` },
+  errorText: { display: "block", fontSize: 12, color: colors.danger, marginTop: 5, fontWeight: 500 },
+
+  // Payment
+  paymentOption: { display: "flex", alignItems: "center", gap: 14, width: "100%", padding: "14px 16px", background: "white", border: `1.5px solid ${colors.gray[200]}`, borderRadius: borderRadius.lg, cursor: "pointer", fontFamily: "inherit", transition: "border-color 0.2s" },
+  paymentOptionActive: { borderColor: colors.primary, boxShadow: `0 0 0 1px ${colors.primary}` },
+
+  // Confirm
+  confirmRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: `1px solid ${colors.gray[100]}` },
+
+  // Summary
+  summaryRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  summaryLabel: { fontSize: 13, color: colors.gray[500] },
+  summaryValue: { fontSize: 13, color: colors.gray[600], fontWeight: 500 },
+  summaryDivider: { height: 1, background: colors.gray[200], margin: "10px 0" },
+  checkoutBtn: { width: "100%", padding: "12px 0", background: colors.primary, color: "white", border: "none", borderRadius: borderRadius.md, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", marginTop: 18, transition: "opacity 0.2s" },
+  checkoutBtnDisabled: { opacity: 0.5, cursor: "not-allowed" },
+  termsText: { fontSize: 11, color: colors.gray[400], textAlign: "center", margin: "10px 0 0", lineHeight: 1.4 },
+};
+
 // ── Main GigDetail Page ──
 export default function GigDetail() {
   const [activeThumb, setActiveThumb] = useState(0);
+  const [checkoutPkg, setCheckoutPkg] = useState(null);
   const gig = GIG_DATA;
+
+  const handleContinue = (pkg) => {
+    setCheckoutPkg(pkg);
+  };
 
   return (
     <div style={s.page}>
@@ -531,12 +777,17 @@ export default function GigDetail() {
 
           {/* ── RIGHT: Buy Card ── */}
           <div style={s.rightCol}>
-            <BuyCard packages={gig.packages} />
+            <BuyCard packages={gig.packages} onContinue={handleContinue} />
           </div>
         </div>
       </div>
 
       <Footer />
+
+      {/* Checkout Modal */}
+      {checkoutPkg && (
+        <CheckoutModal pkg={checkoutPkg} onClose={() => setCheckoutPkg(null)} />
+      )}
     </div>
   );
 }
