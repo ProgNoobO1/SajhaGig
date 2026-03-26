@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { Badge } from "../components/ui";
@@ -24,8 +25,9 @@ const PROJECT_CARD = {
 const CARDS = Array(5).fill(PROJECT_CARD);
 
 function ProjectCard({ card }) {
+  const navigate = useNavigate();
   return (
-    <div style={s.card}>
+    <div style={s.card} onClick={() => navigate("/job/1")} role="button" tabIndex={0}>
       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
         <Badge variant="blue">{card.badge}</Badge>
         <Badge variant="green">{card.status}</Badge>
@@ -163,7 +165,7 @@ const s = {
   sectionTitle: { fontSize: 18, fontWeight: 700, color: colors.text.primary, marginBottom: 16 },
   sectionHighlight: { color: colors.accent },
   cardGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 16 },
-  card: { background: colors.white, border: `1px solid ${colors.gray[200]}`, borderRadius: borderRadius.lg, padding: 14, boxShadow: shadows.sm },
+  card: { background: colors.white, border: `1px solid ${colors.gray[200]}`, borderRadius: borderRadius.lg, padding: 14, boxShadow: shadows.sm, cursor: "pointer", transition: "box-shadow 0.2s" },
   cardTitle: { fontSize: 13, fontWeight: 700, color: colors.text.primary, margin: "0 0 6px", lineHeight: 1.4 },
   cardDesc: { fontSize: 12, color: colors.text.muted, margin: "0 0 10px", lineHeight: 1.5 },
   statsRow: { display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 },
