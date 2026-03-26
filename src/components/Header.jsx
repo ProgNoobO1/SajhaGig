@@ -1,41 +1,60 @@
-// src/components/Header.jsx
 import React from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { colors, borderRadius } from "../constants/theme";
 
 export default function Header() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isBuyer = !location.pathname.startsWith("/freelancer");
+
+  const dashboardPath = isBuyer ? "/client/dashboard" : "/freelancer/dashboard";
+
+  const navLinks = [
+    { label: "Find Work", path: "/find-work" },
+    { label: "Browse Gigs", path: "/browse-gigs" },
+    { label: "Dashboard", path: dashboardPath },
+  ];
+
+  const handleToggle = () => {
+    if (isBuyer) {
+      navigate("/freelancer/dashboard");
+    } else {
+      navigate("/client/dashboard");
+    }
+  };
+
   return (
-    <nav style={styles.navbar}>
-      {/* Logo */}
-      <span style={styles.logo}>SajhaGig</span>
+    <nav style={s.navbar}>
+      <Link to="/" style={s.logo}>SajhaGig</Link>
 
-      {/* Search box */}
-      <div style={styles.searchBox}>
-        <input placeholder="Search For Freelancers Or Services" style={styles.searchInput} />
-        <button style={styles.searchBtn}>🔍</button>
+      <div style={s.searchBox}>
+        <input placeholder="Search For Freelancers Or Services" style={s.searchInput} />
+        <button style={s.searchBtn}>🔍</button>
       </div>
 
-      {/* Nav links */}
-      <div style={styles.navLinks}>
-        <a href="#" style={styles.navLink}>Find Work</a>
-        <a href="#" style={styles.navLink}>Browse Gigs</a>
-        <a href="#" style={styles.navLink}>Dashboard</a>
+      <div style={s.navLinks}>
+        {navLinks.map((link) => (
+          <Link key={link.label} to={link.path} style={s.navLink}>
+            {link.label}
+          </Link>
+        ))}
       </div>
 
-      {/* Seller toggle pill */}
-      <div style={styles.sellerPill}>
-        <span style={styles.sellerDot} />
-        <span style={{ color: "#fff", fontSize: 13 }}>Seller</span>
+      <div onClick={handleToggle} style={s.togglePill}>
+        <span style={{ ...s.toggleDot, background: isBuyer ? colors.success : "#9ca3af" }} />
+        <span style={{ color: colors.white, fontSize: 13, fontWeight: 600 }}>
+          {isBuyer ? "Buyer" : "Seller"}
+        </span>
       </div>
 
-      {/* Avatar */}
-      <div style={styles.userAvatar} />
+      <div style={s.userAvatar} />
     </nav>
   );
 }
 
-// ── Styles used by Header ──
-const styles = {
+const s = {
   navbar: {
-    background: "#1e2a6e",
+    background: colors.primary,
     display: "flex",
     alignItems: "center",
     gap: 16,
@@ -43,16 +62,18 @@ const styles = {
     flexWrap: "wrap",
   },
   logo: {
-    color: "#fff",
+    color: colors.white,
     fontWeight: 700,
     fontSize: 20,
     marginRight: 8,
+    textDecoration: "none",
+    fontStyle: "italic",
   },
   searchBox: {
     display: "flex",
     flex: 1,
-    maxWidth: 340,
-    borderRadius: 8,
+    maxWidth: 380,
+    borderRadius: borderRadius.md,
     overflow: "hidden",
   },
   searchInput: {
@@ -63,11 +84,11 @@ const styles = {
     fontSize: 13,
   },
   searchBtn: {
-    background: "#2563eb",
+    background: colors.accentDark,
     border: "none",
     padding: "0 14px",
     cursor: "pointer",
-    color: "#fff",
+    color: colors.white,
     fontSize: 14,
   },
   navLinks: {
@@ -76,19 +97,21 @@ const styles = {
     marginLeft: "auto",
   },
   navLink: {
-    color: "#cbd5e1",
+    color: "#c7d2fe",
     textDecoration: "none",
     fontSize: 14,
   },
-  sellerPill: {
-    background: "#374151",
-    borderRadius: 20,
+  togglePill: {
+    background: colors.gray[600],
+    borderRadius: borderRadius.pill,
     display: "flex",
     alignItems: "center",
     gap: 6,
     padding: "4px 12px",
+    cursor: "pointer",
+    userSelect: "none",
   },
-  sellerDot: {
+  toggleDot: {
     width: 10,
     height: 10,
     borderRadius: "50%",
@@ -99,6 +122,6 @@ const styles = {
     width: 32,
     height: 32,
     borderRadius: "50%",
-    background: "#374151",
+    background: colors.gray[600],
   },
 };
