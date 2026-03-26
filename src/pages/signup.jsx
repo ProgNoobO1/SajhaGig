@@ -96,9 +96,9 @@ const Signup = () => {
   onClick={() => {
     // When clicked, go to the correct page based on role
     if (selectedRole === 'freelancer') {
-      navigate('/freelancersignup'); // goes to your Add component
+      navigate('/signup/freelancer');
     } else if (selectedRole === 'client') {
-      navigate('/clientsignup'); // goes to client signup if you have one
+      navigate('/signup/client');
     }
   }}
   className={`px-12 py-3.5 rounded-lg font-medium text-[15px] transition-all duration-300 mb-8 shadow-sm ${selectedRole
