@@ -14,6 +14,7 @@ import ReviewClient from "./pages/ReviewClient.jsx";
 import ReviewFreelancer from "./pages/ReviewFreelancer.jsx";
 import GigDetail from "./pages/GigDetail.jsx";
 import CreateGig from "./pages/CreateGig.jsx";
+import Chat from "./pages/Chat.jsx";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
         <Route path="/freelancer/portfolio" element={<Portfolio />} />
         <Route path="/freelancer/create-gig" element={<CreateGig />} />
         <Route path="/gig/:id" element={<GigDetail />} />
+        <Route path="/chat" element={<Chat />} />
       </Routes>
     </BrowserRouter>
   );
