@@ -1,24 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { StarRating } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
-const gigs = [
-  { id: 1, seller: "cc__creative", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "32.4K", title: "I will design UI UX for mobile app with figma for ios", rating: 5.0, reviews: 570, price: "₹8,674", img: "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=1" },
-  { id: 2, seller: "creativesmith99", badge: "Level 2 Seller", badgeColor: "#888", likes: "3.4K", title: "I will create a professional business website design", rating: 4.8, reviews: 57, price: "₹4,674", img: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=2" },
-  { id: 3, seller: "cc__creative", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "32.4K", title: "I will design UI UX for mobile app with figma for ios", rating: 5.0, reviews: 570, price: "₹8,674", img: "https://images.unsplash.com/photo-1616469829167-0bd76a80c913?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=3" },
-  { id: 4, seller: "creativesmith99", badge: "Level 2 Seller", badgeColor: "#888", likes: "3.4K", title: "I will create a professional business website design", rating: 4.8, reviews: 57, price: "₹4,674", img: "https://images.unsplash.com/photo-1558655146-364adaf1fcc9?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=4" },
-  { id: 5, seller: "cc__creative", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "32.4K", title: "I will design UI UX for mobile app with figma for ios", rating: 5.0, reviews: 570, price: "₹8,674", img: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=5" },
-  { id: 6, seller: "designpro_k", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "18.2K", title: "I will build a stunning landing page in React and Tailwind", rating: 4.9, reviews: 320, price: "₹6,299", img: "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=6" },
-  { id: 7, seller: "webwizard22", badge: "Level 2 Seller", badgeColor: "#888", likes: "5.1K", title: "I will design a modern e-commerce UI for your store", rating: 4.7, reviews: 88, price: "₹5,499", img: "https://images.unsplash.com/photo-1563986768494-4dee2763ff3f?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=7" },
-  { id: 8, seller: "cc__creative", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "21.3K", title: "I will create a full brand identity with logo and guidelines", rating: 5.0, reviews: 412, price: "₹9,999", img: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=8" },
-  { id: 9, seller: "creativesmith99", badge: "Level 2 Seller", badgeColor: "#888", likes: "4.8K", title: "I will design a sleek dashboard UI for your SaaS product", rating: 4.6, reviews: 64, price: "₹4,999", img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=9" },
-  { id: 10, seller: "pixelcraft_s", badge: "Top Rated Seller", badgeColor: "#00c9a7", likes: "11.7K", title: "I will design mobile app UI screens with smooth animations", rating: 4.9, reviews: 198, price: "₹7,749", img: "https://images.unsplash.com/photo-1559028012-481c04fa702d?w=300&h=180&fit=crop", avatar: "https://i.pravatar.cc/32?img=10" },
-];
-
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   "Graphics & Design", "Digital Marketing", "Writing & Translation",
   "Video & Animation", "Music & Audio", "Programming & Tech",
   "Photography", "Business",
@@ -70,10 +58,10 @@ function GigCard({ gig }) {
   );
 }
 
-function CategoryBar({ active, onSelect }) {
+function CategoryBar({ active, onSelect, categories }) {
   return (
     <div style={s.categoryBar}>
-      {CATEGORIES.map(cat => (
+      {categories.map(cat => (
         <button key={cat} onClick={() => onSelect(cat === active ? null : cat)}
           style={{ ...s.catBtn, ...(active === cat ? s.catBtnActive : {}) }}
           onMouseEnter={e => { if (cat !== active) e.currentTarget.style.color = "#fff"; }}
@@ -131,12 +119,39 @@ function Carousel({ items }) {
 
 export default function BrowseGigs() {
   const [activeCategory, setActiveCategory] = useState(null);
+  const [gigs, setGigs] = useState([]);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/gigs').then((data) => {
+      const mapped = data.gigs.map((g, i) => ({
+        id: g.id,
+        seller: g.seller?.username || "seller",
+        badge: g.seller?.badge || "",
+        badgeColor: g.seller?.badgeColor || "#888",
+        likes: g.likes >= 1000 ? `${(g.likes / 1000).toFixed(1)}K` : String(g.likes || 0),
+        title: g.title,
+        rating: Number(g.rating) || 0,
+        reviews: g.reviewCount || 0,
+        price: `₹${Number(g.price || 0).toLocaleString()}`,
+        img: g.image || `https://picsum.photos/seed/gig${g.id}/300/180`,
+        avatar: g.seller?.avatar || `https://i.pravatar.cc/32?img=${(i % 10) + 1}`,
+      }));
+      setGigs(mapped);
+    }).catch(() => {}).finally(() => setLoading(false));
+
+    api.get('/categories').then((data) => {
+      setCategories(data.categories.map((c) => c.name));
+    }).catch(() => {});
+  }, []);
+
   const carouselGigs = [...gigs, ...gigs, ...gigs].slice(0, 15);
 
   return (
     <div style={s.page}>
       <Header />
-      <CategoryBar active={activeCategory} onSelect={setActiveCategory} />
+      <CategoryBar active={activeCategory} onSelect={setActiveCategory} categories={categories} />
 
       <div style={{ flex: 1 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 16px" }}>

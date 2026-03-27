@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { StarRating } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
 // ── Sample Data ──
 const GIG_DATA = {
@@ -665,9 +667,84 @@ const m = {
 
 // ── Main GigDetail Page ──
 export default function GigDetail() {
+  const { id } = useParams();
   const [activeThumb, setActiveThumb] = useState(0);
   const [checkoutPkg, setCheckoutPkg] = useState(null);
-  const gig = GIG_DATA;
+  const [gig, setGig] = useState(GIG_DATA);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get(`/gigs/${id}`).then((data) => {
+      const g = data.gig;
+      const seller = g.seller || {};
+      const mapped = {
+        ...GIG_DATA,
+        category: g.category || GIG_DATA.category,
+        subcategory: g.subcategory || GIG_DATA.subcategory,
+        title: g.title || GIG_DATA.title,
+        seller: {
+          name: seller.username || GIG_DATA.seller.name,
+          avatar: seller.avatar || GIG_DATA.seller.avatar,
+          level: seller.badge || GIG_DATA.seller.level,
+          rating: Number(g.overallRating) || GIG_DATA.seller.rating,
+          reviews: g.reviewCount || GIG_DATA.seller.reviews,
+          ordersInQueue: seller.ordersInQueue || GIG_DATA.seller.ordersInQueue,
+        },
+        mainImage: (g.images && g.images[0]?.imageUrl) || GIG_DATA.mainImage,
+        thumbnails: g.images?.length ? g.images.map((img) => img.imageUrl) : GIG_DATA.thumbnails,
+        about: g.description ? g.description.split("\n").filter(Boolean) : GIG_DATA.about,
+        requirements: g.requirements ? g.requirements.split("\n").filter(Boolean) : GIG_DATA.requirements,
+        packages: g.packages?.length ? {
+          basic: mapPackage(g.packages.find((p) => p.tier === "basic") || g.packages[0]),
+          standard: mapPackage(g.packages.find((p) => p.tier === "standard") || g.packages[1] || g.packages[0]),
+          premium: mapPackage(g.packages.find((p) => p.tier === "premium") || g.packages[2] || g.packages[0]),
+        } : GIG_DATA.packages,
+        sellerProfile: {
+          ...GIG_DATA.sellerProfile,
+          name: seller.username || GIG_DATA.sellerProfile.name,
+          avatar: seller.avatar || GIG_DATA.sellerProfile.avatar,
+          level: seller.badge || GIG_DATA.sellerProfile.level,
+          country: seller.country || GIG_DATA.sellerProfile.country,
+          memberSince: seller.memberSince || GIG_DATA.sellerProfile.memberSince,
+          bio: seller.bio || GIG_DATA.sellerProfile.bio,
+          languages: seller.languages || GIG_DATA.sellerProfile.languages,
+          stats: {
+            rating: Number(g.overallRating) || GIG_DATA.sellerProfile.stats.rating,
+            reviews: g.reviewCount || GIG_DATA.sellerProfile.stats.reviews,
+            ordersCompleted: seller.jobsCompleted || GIG_DATA.sellerProfile.stats.ordersCompleted,
+            onTimeDelivery: seller.onTimeDelivery || GIG_DATA.sellerProfile.stats.onTimeDelivery,
+            responseTime: seller.avgResponse || GIG_DATA.sellerProfile.stats.responseTime,
+          },
+        },
+        faqs: g.faqs?.length ? g.faqs.map((f) => ({ q: f.question, a: f.answer })) : GIG_DATA.faqs,
+        reviews: g.reviews?.length ? g.reviews.map((r) => ({
+          name: r.reviewerName || "User",
+          country: r.reviewerCountry || "",
+          flag: r.reviewerFlag || "",
+          avatar: r.reviewerAvatar || `https://i.pravatar.cc/40?img=${r.reviewerId}`,
+          rating: r.rating,
+          timeAgo: r.timeAgo || "recently",
+          comment: r.comment,
+          price: r.price || "",
+          duration: r.duration || "",
+        })) : GIG_DATA.reviews,
+      };
+      setGig(mapped);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [id]);
+
+  function mapPackage(p) {
+    if (!p) return GIG_DATA.packages.basic;
+    const features = Array.isArray(p.features) ? p.features.map((f) => ({ label: f, included: true })) : [];
+    return {
+      name: p.name || p.tier?.toUpperCase() + " PROMO",
+      price: `₹${Number(p.price || 0).toLocaleString()}`,
+      description: p.description || "",
+      delivery: `${p.deliveryDays || 5} Days Delivery`,
+      revisions: p.revisions === -1 ? "Unlimited Revisions" : `${p.revisions || 1} Revision${(p.revisions || 1) > 1 ? "s" : ""}`,
+      features: features.length ? features : GIG_DATA.packages.basic.features,
+    };
+  }
 
   const handleContinue = (pkg) => {
     setCheckoutPkg(pkg);

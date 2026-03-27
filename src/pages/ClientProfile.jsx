@@ -3,6 +3,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Badge, StarRating } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 // ── Sample Data ──
 const PROFILE = {
@@ -349,11 +351,53 @@ function ProjectGridCard({ project }) {
 export default function ClientProfile() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [showEdit, setShowEdit] = useState(false);
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(PROFILE);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/users/${user.id}`).then((data) => {
+      const u = data.user;
+      if (u) {
+        setProfile((prev) => ({
+          ...prev,
+          initials: u.initials || prev.initials,
+          name: `${u.firstName} ${u.lastName}`,
+          location: u.location || prev.location,
+          about: u.bio ? [u.bio] : prev.about,
+          stats: [
+            { value: String(u.clientProfile?.projectsPosted || prev.stats[0].value), label: "Projects", color: colors.accent },
+            { value: String(u.clientProfile?.hiredCount || prev.stats[1].value), label: "Hired", color: colors.accent },
+            { value: u.clientProfile?.totalSpent ? `Rs.${(u.clientProfile.totalSpent / 1000).toFixed(0)}K` : prev.stats[2].value, label: "Spent", color: colors.success },
+            { value: u.clientProfile?.avgRating ? `${u.clientProfile.avgRating}★` : prev.stats[3].value, label: "Avg Rating", color: colors.warning },
+            { value: u.clientProfile?.onTimePayment || prev.stats[4].value, label: "On-time Pay", color: colors.accent },
+          ],
+        }));
+      }
+    }).catch(() => {});
+
+    api.get(`/reviews/given/${user.id}`).then((data) => {
+      if (data.reviews?.length) {
+        setProfile((prev) => ({
+          ...prev,
+          reviewsGiven: data.reviews.map((r) => ({
+            name: r.revieweeName || "Freelancer",
+            initials: (r.revieweeName || "F").split(" ").map(w => w[0]).join(""),
+            color: ["#2dd4a8", "#a855f7", "#3b82f6", "#f59e0b", "#ef4444", "#22c55e"][Math.floor(Math.random() * 6)],
+            rating: r.rating,
+            project: r.projectName || "Project",
+            timeAgo: r.timeAgo || "recently",
+            comment: r.comment,
+          })),
+        }));
+      }
+    }).catch(() => {});
+  }, [user]);
 
   return (
     <div style={st.page}>
       <Header />
-      <ProfileBanner profile={PROFILE} onEdit={() => setShowEdit(true)} />
+      <ProfileBanner profile={profile} onEdit={() => setShowEdit(true)} />
 
       <div style={st.container}>
         <TabNav active={activeTab} onChange={setActiveTab} />
@@ -363,14 +407,14 @@ export default function ClientProfile() {
             <div style={st.leftCol}>
               <section style={st.card}>
                 <h3 style={st.cardTitle}>About</h3>
-                {PROFILE.about.map((p, i) => (
+                {profile.about.map((p, i) => (
                   <p key={i} style={st.aboutText}>{p}</p>
                 ))}
               </section>
               <section style={st.card}>
                 <h3 style={st.cardTitle}>What I Look For in Freelancers</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {PROFILE.lookingFor.map((item, i) => (
+                  {profile.lookingFor.map((item, i) => (
                     <div key={i} style={{ display: "flex", gap: 12 }}>
                       <span style={st.lookIcon}>{item.icon}</span>
                       <div>
@@ -386,7 +430,7 @@ export default function ClientProfile() {
               <section style={st.card}>
                 <h3 style={st.cardTitle}>Active Projects</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {PROFILE.activeProjects.map((p, i) => (
+                  {profile.activeProjects.map((p, i) => (
                     <ProjectCard key={i} project={p} />
                   ))}
                 </div>
@@ -394,7 +438,7 @@ export default function ClientProfile() {
               <section style={st.card}>
                 <h3 style={st.cardTitle}>Hire History</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {PROFILE.hireHistory.map((h, i) => (
+                  {profile.hireHistory.map((h, i) => (
                     <HireItem key={i} hire={h} />
                   ))}
                 </div>
@@ -405,7 +449,7 @@ export default function ClientProfile() {
 
         {activeTab === "Projects" && (
           <div style={st.pGrid}>
-            {PROFILE.projects.map((p, i) => (
+            {profile.projects.map((p, i) => (
               <ProjectGridCard key={i} project={p} />
             ))}
           </div>
@@ -414,22 +458,22 @@ export default function ClientProfile() {
         {activeTab === "Reviews Given" && (
           <div style={{ maxWidth: 740, marginTop: 20 }}>
             <section style={st.card}>
-              <h3 style={st.cardTitle}>Reviews Given ({PROFILE.reviewsGiven.length})</h3>
+              <h3 style={st.cardTitle}>Reviews Given ({profile.reviewsGiven.length})</h3>
 
               {/* Reputation Summary */}
               <div style={st.repCard}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 16 }}>
                   <div>
-                    <span style={st.repScore}>{PROFILE.reputation.avg}</span>
+                    <span style={st.repScore}>{profile.reputation.avg}</span>
                     <div style={{ marginTop: 4 }}><StarRating rating={parseFloat(PROFILE.reputation.avg)} size={14} /></div>
                     <span style={{ fontSize: 12, color: colors.gray[400], marginTop: 2, display: "block" }}>avg given</span>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, color: colors.gray[600], marginBottom: 4 }}>
-                      Reputation: <strong style={{ color: colors.success }}>{PROFILE.reputation.label}</strong>
+                      Reputation: <strong style={{ color: colors.success }}>{profile.reputation.label}</strong>
                     </div>
                     <div style={{ fontSize: 13, color: colors.gray[400] }}>
-                      {PROFILE.reputation.traits.join(" · ")}
+                      {profile.reputation.traits.join(" · ")}
                     </div>
                   </div>
                 </div>
@@ -437,7 +481,7 @@ export default function ClientProfile() {
 
               {/* Review List */}
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {PROFILE.reviewsGiven.map((r, i) => (
+                {profile.reviewsGiven.map((r, i) => (
                   <ReviewGivenCard key={i} review={r} />
                 ))}
               </div>

@@ -1,13 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FormInput } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    const role = localStorage.getItem("sajhagig_role") || "client";
-    navigate(role === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard");
+  const handleLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const user = await login(email, password);
+      navigate(user.role === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard");
+    } catch (err) {
+      setError(err.message || "Invalid email or password");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,14 +46,21 @@ export default function Login() {
             Log In Back To Your Account
           </p>
 
-          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" />
-          <FormInput label="Password" type="password" placeholder="password" className="mb-8" />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-md px-4 py-2 mb-4">
+              {error}
+            </div>
+          )}
+
+          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <FormInput label="Password" type="password" placeholder="password" className="mb-8" value={password} onChange={(e) => setPassword(e.target.value)} />
 
           <button
             onClick={handleLogin}
-            className="bg-blue-800 text-white w-full h-[44px] rounded-md hover:bg-blue-900 active:bg-blue-700 text-sm font-semibold"
+            disabled={loading}
+            className="bg-blue-800 text-white w-full h-[44px] rounded-md hover:bg-blue-900 active:bg-blue-700 text-sm font-semibold disabled:opacity-50"
           >
-            Log In
+            {loading ? "Logging in..." : "Log In"}
           </button>
 
           <p className="text-center text-gray-500 text-sm mt-6">

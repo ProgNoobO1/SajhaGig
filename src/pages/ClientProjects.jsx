@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout";
 import { Pagination, StarRating, AvatarGroup, Badge } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
 const AVATARS = [
   "https://randomuser.me/api/portraits/women/44.jpg",
@@ -99,6 +100,29 @@ export default function ClientProjects() {
   const [activeLabel, setActiveLabel] = useState("Projects");
   const [activeSub, setActiveSub] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [projectList, setProjectList] = useState(PROJECTS);
+
+  useEffect(() => {
+    api.get('/projects').then((data) => {
+      if (data.projects?.length) {
+        setProjectList(data.projects.map((p, i) => ({
+          icon: Object.values(PROJECT_ICONS)[i % 5],
+          name: p.name || p.title,
+          description: p.description || "Project description",
+          type: p.projectType || "Fixed",
+          price: `$${p.price || 0}`,
+          hiredOn: p.hiredOn ? new Date(p.hiredOn).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }) : undefined,
+          location: "UK",
+          expiry: p.deadline ? `${Math.max(0, Math.ceil((new Date(p.deadline) - new Date()) / 86400000))} Days Left` : "4 Days Left",
+          tags: p.tags || [],
+          status: p.status === "completed" ? "completed" : p.status === "active" ? "open" : "proposal",
+          avatars: AVATARS.slice(0, (i % 4) + 1),
+          proposals: p.proposalCount ? `${p.proposalCount} Proposal` : undefined,
+          rating: p.status === "completed" ? 5.0 : undefined,
+        })));
+      }
+    }).catch(() => {});
+  }, []);
 
   return (
     <DashboardLayout
@@ -111,7 +135,7 @@ export default function ClientProjects() {
       expandLabel="Projects"
     >
       <h3 style={s.allProjectsTitle}>All Projects</h3>
-      {PROJECTS.map((project, i) => (
+      {projectList.map((project, i) => (
         <ProjectCard key={i} project={project} />
       ))}
       <Pagination current={currentPage} total={10} onPageChange={setCurrentPage} />

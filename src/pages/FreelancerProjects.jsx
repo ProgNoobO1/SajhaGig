@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout";
 import { Pagination } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 const PROJECT_SUB_LINKS = [
   "My Proposal", "Ongoing Projects", "Completed Projects", "Cancelled Projects",
@@ -79,6 +81,27 @@ export default function FreelancerProjects() {
   const [activeLabel, setActiveLabel] = useState("Projects");
   const [activeSub, setActiveSub] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [proposalList, setProposalList] = useState(PROPOSALS);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/proposals/freelancer/${user.id}`).then((data) => {
+      if (data.proposals?.length) {
+        setProposalList(data.proposals.map((p, i) => ({
+          id: p.id,
+          icon: Object.values(PROJECT_ICONS)[i % 5],
+          title: p.jobTitle || "Project",
+          description: p.coverLetter?.slice(0, 80) || "Proposal description",
+          clientPrice: `$${p.jobBudget || 0} (Fixed)`,
+          jobType: "Hourly",
+          price: `$${p.proposedRate || 0}`,
+          clientName: p.clientName || "Client",
+          clientAvatar: p.clientAvatar || CLIENT_AVATARS.hayley,
+        })));
+      }
+    }).catch(() => {});
+  }, [user]);
 
   return (
     <DashboardLayout
@@ -89,11 +112,11 @@ export default function FreelancerProjects() {
       activeSubIndex={activeSub}
       onSubLinkClick={setActiveSub}
       expandLabel="Projects"
-      profileName="John Smith"
-      profileEmail="walter@sample.com"
+      profileName={user?.firstName ? `${user.firstName} ${user.lastName}` : "John Smith"}
+      profileEmail={user?.email || "john@sample.com"}
     >
       <h3 style={s.sectionTitle}>My Proposals</h3>
-      {PROPOSALS.map((proposal) => (
+      {proposalList.map((proposal) => (
         <ProposalCard key={proposal.id} proposal={proposal} />
       ))}
       <Pagination current={currentPage} total={10} onPageChange={setCurrentPage} />

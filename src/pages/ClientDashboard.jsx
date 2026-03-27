@@ -6,6 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Label,
 } from "recharts";
+import api from "../api/client";
 
 const CATEGORIES = [
   "Web Development", "Mobile Development", "UI/UX Design", "Graphic Design",
@@ -118,7 +119,17 @@ function PostProjectModal({ open, onClose }) {
           </div>
 
           {/* Post Project Button */}
-          <button style={m.submitBtn}>Post Project</button>
+          <button style={m.submitBtn} onClick={() => {
+            api.post('/jobs', {
+              title: form.title, category: form.category,
+              experienceLevel: form.experience.toLowerCase().replace(" ", "_"),
+              description: form.description,
+              budgetMin: Number(form.minBudget) || 0,
+              budgetMax: Number(form.maxBudget) || 0,
+              budgetType: "fixed",
+              skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
+            }).then(() => onClose()).catch(() => onClose());
+          }}>Post Project</button>
         </div>
       </div>
     </div>
@@ -220,7 +231,7 @@ function TransactionRow({ tx }) {
   );
 }
 
-function JobsTable() {
+function JobsTable({ jobsList }) {
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={s.table}>
@@ -231,7 +242,7 @@ function JobsTable() {
           </tr>
         </thead>
         <tbody>
-          {JOBS.map((job, i) => (
+          {jobsList.map((job, i) => (
             <tr key={i} style={i % 2 === 0 ? {} : { background: colors.gray[50] }}>
               <td style={s.td}>{job.title}</td>
               <td style={s.td}>{job.type}</td>
@@ -253,6 +264,37 @@ function JobsTable() {
 export default function ClientDashboard() {
   const [activeLabel, setActiveLabel] = useState("Dashboard");
   const [showPostModal, setShowPostModal] = useState(false);
+  const [stats, setStats] = useState({ projectsPosted: 75, ongoingProjects: 10, completedProjects: 65, reviews: 25 });
+  const [ongoingProjects, setOngoingProjects] = useState(ONGOING_PROJECTS);
+  const [transactions, setTransactions] = useState(TRANSACTIONS);
+  const [jobs, setJobs] = useState(JOBS);
+
+  useEffect(() => {
+    api.get('/dashboard/client').then((data) => {
+      if (data.stats) setStats(data.stats);
+      if (data.projects?.length) setOngoingProjects(data.projects.map((p) => ({
+        company: p.freelancerName || "Freelancer",
+        title: p.name || p.title,
+        budget: `$${p.price || 0}`,
+        type: p.projectType || "Hourly",
+        location: "UK",
+        expiry: p.deadline ? `${Math.ceil((new Date(p.deadline) - new Date()) / 86400000)} Days Left` : "6 Days Left",
+      })));
+      if (data.transactions?.length) setTransactions(data.transactions.map((t) => ({
+        name: t.name, date: new Date(t.createdAt).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+        amount: `${t.type === "credit" ? "+" : "-"}$${Math.abs(t.amount).toFixed(2)}`,
+        positive: t.type === "credit",
+        iconColor: t.type === "credit" ? "#8b5cf6" : "#3b82f6",
+      })));
+      if (data.jobs?.length) setJobs(data.jobs.map((j) => ({
+        title: j.title, type: j.budgetType || "Hourly",
+        budget: `$${j.budgetMax || 0}`,
+        created: new Date(j.createdAt).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+        expiring: "10 Oct 2023", proposals: j.proposalCount || 0,
+        color: j.proposalCount > 40 ? colors.danger : colors.orange,
+      })));
+    }).catch(() => {});
+  }, []);
 
   return (
     <DashboardLayout
@@ -274,10 +316,10 @@ export default function ClientDashboard() {
 
       {/* Stat cards */}
       <div style={s.statsGrid}>
-        <StatCard icon="📋" label="Projects Posted" value={75} color={colors.accent} />
-        <StatCard icon="🔄" label="Ongoing Projects" value={10} color={colors.success} />
-        <StatCard icon="✅" label="Completed Projects" value={65} color={colors.orange} />
-        <StatCard icon="⭐" label="Reviews" value={25} color={colors.warning} />
+        <StatCard icon="📋" label="Projects Posted" value={stats.projectsPosted} color={colors.accent} />
+        <StatCard icon="🔄" label="Ongoing Projects" value={stats.ongoingProjects} color={colors.success} />
+        <StatCard icon="✅" label="Completed Projects" value={stats.completedProjects} color={colors.orange} />
+        <StatCard icon="⭐" label="Reviews" value={stats.reviews} color={colors.warning} />
       </div>
 
       {/* Charts */}
@@ -327,11 +369,11 @@ export default function ClientDashboard() {
             <h4 style={s.cardTitle}>Ongoing Projects</h4>
             <a href="#" style={s.viewAll}>View All</a>
           </div>
-          {ONGOING_PROJECTS.map((p, i) => <ProjectRow key={i} project={p} />)}
+          {ongoingProjects.map((p, i) => <ProjectRow key={i} project={p} />)}
         </div>
         <div style={s.card}>
           <h4 style={s.cardTitle}>Recent Transactions</h4>
-          {TRANSACTIONS.map((tx, i) => <TransactionRow key={i} tx={tx} />)}
+          {transactions.map((tx, i) => <TransactionRow key={i} tx={tx} />)}
         </div>
       </div>
 
@@ -341,7 +383,7 @@ export default function ClientDashboard() {
           <h4 style={s.cardTitle}>Recently Posted Jobs</h4>
           <input style={s.searchSmall} placeholder="🔍 Search" />
         </div>
-        <JobsTable />
+        <JobsTable jobsList={jobs} />
       </div>
     </DashboardLayout>
   );

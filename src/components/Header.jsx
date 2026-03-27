@@ -1,10 +1,12 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { colors, borderRadius } from "../constants/theme";
+import { useAuth } from "../context/AuthContext";
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isBuyer = !location.pathname.startsWith("/freelancer");
 
   const dashboardPath = isBuyer ? "/client/dashboard" : "/freelancer/dashboard";
@@ -47,7 +49,13 @@ export default function Header() {
         </span>
       </div>
 
-      <div style={s.userAvatar} onClick={() => navigate(isBuyer ? "/client/profile" : "/freelancer/profile")} />
+      {user ? (
+        <div style={{ ...s.userAvatar, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }} onClick={() => navigate(isBuyer ? "/client/profile" : "/freelancer/profile")}>
+          {user.initials || "U"}
+        </div>
+      ) : (
+        <Link to="/login" style={{ color: "#c7d2fe", textDecoration: "none", fontSize: 14 }}>Login</Link>
+      )}
     </nav>
   );
 }

@@ -3,6 +3,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Badge, StarRating, ReviewCard } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 // ── Sample Data ──
 const PROFILE = {
@@ -250,7 +252,7 @@ function EditProfileModal({ onClose }) {
         </div>
 
         <div style={em.avatarRow}>
-          <div style={em.avatarPreview}>{PROFILE.initials}</div>
+          <div style={em.avatarPreview}>{profile.initials}</div>
           <button style={em.changePhotoBtn}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
             Change Photo
@@ -307,11 +309,56 @@ function EditProfileModal({ onClose }) {
 export default function FreelancerProfile() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [showEdit, setShowEdit] = useState(false);
+  const { user } = useAuth();
+  const [profile, setProfile] = useState(PROFILE);
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/users/${user.id}`).then((data) => {
+      const u = data.user;
+      if (u) {
+        setProfile((prev) => ({
+          ...prev,
+          initials: u.initials || prev.initials,
+          name: `${u.firstName} ${u.lastName}`,
+          title: u.freelancerProfile?.title || prev.title,
+          location: u.location || prev.location,
+          rate: u.freelancerProfile?.hourlyRate ? `Rs. ${u.freelancerProfile.hourlyRate}/hr` : prev.rate,
+          skills: u.skills?.length ? u.skills : prev.skills,
+          stats: [
+            { value: String(u.freelancerProfile?.rating || prev.stats[0].value), label: "Rating", icon: "★" },
+            { value: String(u.freelancerProfile?.jobsCompleted || prev.stats[1].value), label: "Jobs Done" },
+            { value: u.freelancerProfile?.totalEarnings ? `Rs.${(u.freelancerProfile.totalEarnings / 1000).toFixed(0)}K` : prev.stats[2].value, label: "Earned" },
+            { value: u.freelancerProfile?.onTimeDelivery || prev.stats[3].value, label: "On-time" },
+            { value: u.freelancerProfile?.rehireRate || prev.stats[4].value, label: "Rehire" },
+          ],
+          about: u.bio ? [u.bio] : prev.about,
+        }));
+      }
+    }).catch(() => {});
+
+    api.get(`/reviews/user/${user.id}`).then((data) => {
+      if (data.reviews?.length) {
+        setProfile((prev) => ({
+          ...prev,
+          reviews: data.reviews.map((r) => ({
+            name: r.reviewerName || "User",
+            initials: (r.reviewerName || "U").split(" ").map(w => w[0]).join(""),
+            color: ["#2dd4a8", "#a855f7", "#3b82f6", "#f59e0b", "#ef4444", "#22c55e"][Math.floor(Math.random() * 6)],
+            rating: r.rating,
+            timeAgo: r.timeAgo || "recently",
+            project: r.projectName || "Project",
+            comment: r.comment,
+          })),
+        }));
+      }
+    }).catch(() => {});
+  }, [user]);
 
   return (
     <div style={st.page}>
       <Header />
-      <ProfileBanner profile={PROFILE} onEdit={() => setShowEdit(true)} />
+      <ProfileBanner profile={profile} onEdit={() => setShowEdit(true)} />
       {showEdit && <EditProfileModal onClose={() => setShowEdit(false)} />}
 
       <div style={st.container}>
@@ -323,14 +370,14 @@ export default function FreelancerProfile() {
             <div style={st.leftCol}>
               <section style={st.card}>
                 <h3 style={st.cardTitle}>About Me</h3>
-                {PROFILE.about.map((p, i) => (
+                {profile.about.map((p, i) => (
                   <p key={i} style={st.aboutText}>{p}</p>
                 ))}
               </section>
               <section style={st.card}>
                 <h3 style={st.cardTitle}>Portfolio</h3>
                 <div style={st.portfolioGrid}>
-                  {PROFILE.portfolio.map((item, i) => (
+                  {profile.portfolio.map((item, i) => (
                     <PortfolioCard key={i} item={item} />
                   ))}
                 </div>
@@ -340,7 +387,7 @@ export default function FreelancerProfile() {
               <section style={st.card}>
                 <h3 style={st.cardTitle}>Active Gigs</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {PROFILE.activeGigs.map((gig, i) => (
+                  {profile.activeGigs.map((gig, i) => (
                     <GigCard key={i} gig={gig} />
                   ))}
                 </div>
@@ -348,7 +395,7 @@ export default function FreelancerProfile() {
               <section style={st.card}>
                 <h3 style={st.cardTitle}>Recent Reviews</h3>
                 <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                  {PROFILE.reviews.map((review, i) => (
+                  {profile.reviews.map((review, i) => (
                     <MiniReview key={i} review={review} />
                   ))}
                 </div>
@@ -359,7 +406,7 @@ export default function FreelancerProfile() {
 
         {activeTab === "Gigs" && (
           <div style={st.gigGrid}>
-            {PROFILE.gigCards.map((gig, i) => (
+            {profile.gigCards.map((gig, i) => (
               <GigGridCard key={i} gig={gig} />
             ))}
           </div>
@@ -368,9 +415,9 @@ export default function FreelancerProfile() {
         {activeTab === "Reviews" && (
           <div style={{ maxWidth: 740, marginTop: 20 }}>
             <section style={st.card}>
-              <h3 style={st.cardTitle}>All Reviews ({PROFILE.reviews.length * 8})</h3>
+              <h3 style={st.cardTitle}>All Reviews ({profile.reviews.length * 8})</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                {PROFILE.reviews.map((review, i) => (
+                {profile.reviews.map((review, i) => (
                   <ProfileReviewCard key={i} review={review} />
                 ))}
               </div>
@@ -380,7 +427,7 @@ export default function FreelancerProfile() {
 
         {activeTab === "Portfolio" && (
           <div style={st.portfolioFullGrid}>
-            {PROFILE.portfolio.map((item, i) => (
+            {profile.portfolio.map((item, i) => (
               <PortfolioCard key={i} item={item} />
             ))}
           </div>

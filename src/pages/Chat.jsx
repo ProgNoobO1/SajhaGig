@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
 // ── Sample Data ──
 const CONTACTS = [
@@ -111,8 +112,26 @@ export default function Chat() {
   const [activeContact, setActiveContact] = useState(1);
   const [search, setSearch] = useState("");
   const [input, setInput] = useState("");
+  const [contacts, setContacts] = useState(CONTACTS);
   const [messages, setMessages] = useState(MESSAGES);
   const messagesContainerRef = useRef(null);
+
+  useEffect(() => {
+    api.get('/chats').then((data) => {
+      if (data.chats?.length) {
+        setContacts(data.chats.map((c) => ({
+          id: c.id,
+          name: c.otherUser?.name || c.name,
+          avatar: c.otherUser?.avatar || `https://i.pravatar.cc/40?img=${c.id}`,
+          online: c.otherUser?.online || false,
+          lastMsg: c.lastMessage || "",
+          time: c.lastMessageTime || "",
+          unread: c.unreadCount || 0,
+        })));
+        if (data.chats[0]) setActiveContact(data.chats[0].id);
+      }
+    }).catch(() => {});
+  }, []);
 
   const scrollToBottom = () => {
     const el = messagesContainerRef.current;
@@ -123,11 +142,11 @@ export default function Chat() {
     scrollToBottom();
   }, [activeContact, messages]);
 
-  const filteredContacts = CONTACTS.filter((c) =>
+  const filteredContacts = contacts.filter((c) =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const currentContact = CONTACTS.find((c) => c.id === activeContact);
+  const currentContact = contacts.find((c) => c.id === activeContact);
   const currentMessages = messages[activeContact] || [];
 
   const handleSend = () => {
@@ -143,6 +162,7 @@ export default function Chat() {
       [activeContact]: [...(prev[activeContact] || []), newMsg],
     }));
     setInput("");
+    api.post(`/chats/${activeContact}/messages`, { text: input.trim() }).catch(() => {});
   };
 
   const handleKeyDown = (e) => {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -7,6 +7,7 @@ import {
 import { DashboardLayout } from "../components/layout";
 import { StatCard, Avatar } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const overviewData = DAYS.map((day, i) => ({
@@ -71,6 +72,35 @@ function EarningRow({ name, date, amount, initials, color }) {
 export default function FreelancerDashboard() {
   const [activeLabel, setActiveLabel] = useState("Dashboard");
   const navigate = useNavigate();
+  const [stats, setStats] = useState({ completedJobs: 50, taskCompleted: 25, reviews: 25, earning: "$5862" });
+  const [projectList, setProjectList] = useState(projects);
+  const [earningsList, setEarningsList] = useState(earnings);
+
+  useEffect(() => {
+    api.get('/dashboard/freelancer').then((data) => {
+      if (data.stats) setStats({
+        completedJobs: data.stats.completedJobs || 50,
+        taskCompleted: data.stats.taskCompleted || 25,
+        reviews: data.stats.reviews || 25,
+        earning: `$${data.stats.totalEarnings || 5862}`,
+      });
+      if (data.projects?.length) setProjectList(data.projects.map((p) => ({
+        client: p.clientName || "Client",
+        title: p.name || p.title,
+        type: p.projectType || "Hourly",
+        location: "UK",
+        expiry: p.deadline ? `${Math.ceil((new Date(p.deadline) - new Date()) / 86400000)} Days Left` : "6 Days Left",
+        amount: `$${p.price || 0}`,
+      })));
+      if (data.transactions?.length) setEarningsList(data.transactions.map((t, i) => ({
+        name: t.name,
+        date: new Date(t.createdAt).toLocaleDateString("en-US", { day: "2-digit", month: "short", year: "numeric" }),
+        amount: `$${Math.abs(t.amount)}`,
+        initials: t.name.split(" ").map(w => w[0]).join("").slice(0, 2),
+        color: ["#6366f1", "#ec4899", colors.warning, "#10b981", "#14b8a6"][i % 5],
+      })));
+    }).catch(() => {});
+  }, []);
 
   return (
     <DashboardLayout
@@ -89,10 +119,10 @@ export default function FreelancerDashboard() {
 
       {/* Stat Cards */}
       <div style={s.statsRow}>
-        <StatCard icon="📋" label="Completed Jobs" value="50" iconBg="#dcfce7" />
-        <StatCard icon="✅" label="Task Completed" value="25" iconBg="#dbeafe" />
-        <StatCard icon="⭐" label="Reviews" value="25" iconBg="#fef9c3" />
-        <StatCard icon="💲" label="Earning" value="$5862" iconBg="#fce7f3" />
+        <StatCard icon="📋" label="Completed Jobs" value={stats.completedJobs} iconBg="#dcfce7" />
+        <StatCard icon="✅" label="Task Completed" value={stats.taskCompleted} iconBg="#dbeafe" />
+        <StatCard icon="⭐" label="Reviews" value={stats.reviews} iconBg="#fef9c3" />
+        <StatCard icon="💲" label="Earning" value={stats.earning} iconBg="#fce7f3" />
       </div>
 
       {/* Charts */}
@@ -153,12 +183,12 @@ export default function FreelancerDashboard() {
             <span style={s.cardTitle}>Ongoing Projects</span>
             <a href="#" style={s.viewAll}>View All</a>
           </div>
-          {projects.map((p, i) => <ProjectRow key={i} {...p} />)}
+          {projectList.map((p, i) => <ProjectRow key={i} {...p} />)}
         </div>
 
         <div style={{ ...s.card, flex: 1 }}>
           <span style={s.cardTitle}>Recent Earnings</span>
-          {earnings.map((e, i) => <EarningRow key={i} {...e} />)}
+          {earningsList.map((e, i) => <EarningRow key={i} {...e} />)}
         </div>
       </div>
     </DashboardLayout>

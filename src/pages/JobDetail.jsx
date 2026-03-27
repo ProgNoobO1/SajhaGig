@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { Badge } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
 // ── Category Bar ──
 const CATEGORIES = [
@@ -128,9 +129,49 @@ const BriefcaseIcon = () => (
   </svg>
 );
 
+// ── Fallback ──
+const FALLBACK_JOB = JOB;
+
 // ── Main Page ──
 export default function JobDetail() {
+  const { id } = useParams();
   const navigate = useNavigate();
+  const [job, setJob] = useState(JOB);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get(`/jobs/${id}`).then((data) => {
+      const j = data.job;
+      const client = j.client || {};
+      setJob({
+        ...FALLBACK_JOB,
+        title: j.title || FALLBACK_JOB.title,
+        postedAgo: j.postedAgo || FALLBACK_JOB.postedAgo,
+        location: j.location || FALLBACK_JOB.location,
+        summary: {
+          ...FALLBACK_JOB.summary,
+          jobTitle: j.title || FALLBACK_JOB.summary.jobTitle,
+          description: j.description ? j.description.split("\n").filter(Boolean) : FALLBACK_JOB.summary.description,
+        },
+        price: j.budgetType === "hourly" ? `$${j.budgetMin}-$${j.budgetMax}/hr` : `$${Number(j.budgetMax || 0).toFixed(2)}`,
+        priceType: j.budgetType === "hourly" ? "Hourly" : "Fixed price",
+        level: j.experienceLevel ? j.experienceLevel.charAt(0).toUpperCase() + j.experienceLevel.slice(1) : FALLBACK_JOB.level,
+        levelSub: "Experience Level",
+        remote: true,
+        projectType: j.projectType === "ongoing" ? "Ongoing project" : "One-time project",
+        skills: j.skills?.length ? j.skills : FALLBACK_JOB.skills,
+        activity: {
+          ...FALLBACK_JOB.activity,
+          proposals: j.proposalCount ? (j.proposalCount < 5 ? "Less than 5" : String(j.proposalCount)) : FALLBACK_JOB.activity.proposals,
+        },
+        client: {
+          memberSince: client.memberSince || FALLBACK_JOB.client.memberSince,
+          country: client.country || FALLBACK_JOB.client.country,
+          localTime: FALLBACK_JOB.client.localTime,
+        },
+      });
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [id]);
 
   return (
     <div style={st.page}>
@@ -140,7 +181,7 @@ export default function JobDetail() {
       <main style={st.main}>
         {/* Title + Apply */}
         <div style={st.titleRow}>
-          <h1 style={st.title}>{JOB.title}</h1>
+          <h1 style={st.title}>{job.title}</h1>
           <button style={st.applyBtn} onClick={() => navigate("/find-work")}>
             Apply Now
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
@@ -149,8 +190,8 @@ export default function JobDetail() {
 
         {/* Meta */}
         <div style={st.metaRow}>
-          <span style={st.metaItem}><ClockIcon /> Posted {JOB.postedAgo}</span>
-          <span style={st.metaItem}><GlobeIcon /> {JOB.location}</span>
+          <span style={st.metaItem}><ClockIcon /> Posted {job.postedAgo}</span>
+          <span style={st.metaItem}><GlobeIcon /> {job.location}</span>
         </div>
 
         <div style={st.divider} />
@@ -159,19 +200,19 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={st.sectionLabel}>Summary</h3>
           <p style={st.subLabel}>Job Title</p>
-          <p style={st.bodyText}>{JOB.summary.jobTitle}</p>
+          <p style={st.bodyText}>{job.summary.jobTitle}</p>
 
           <p style={st.subLabel}>Job Description:</p>
-          {JOB.summary.description.map((p, i) => (
+          {job.summary.description.map((p, i) => (
             <p key={i} style={st.bodyText}>{p}</p>
           ))}
 
           <p style={st.subLabel}>What We Need Designed:</p>
-          <p style={st.bodyText}>{JOB.summary.whatWeNeed}</p>
+          <p style={st.bodyText}>{job.summary.whatWeNeed}</p>
 
           <p style={st.subLabel}>The design should be:</p>
           <ul style={st.reqList}>
-            {JOB.summary.designRequirements.map((r, i) => (
+            {job.summary.designRequirements.map((r, i) => (
               <li key={i} style={st.reqItem}>{r}</li>
             ))}
           </ul>
@@ -184,15 +225,15 @@ export default function JobDetail() {
           <div style={st.detailItem}>
             <DollarIcon />
             <div>
-              <div style={st.detailValue}>{JOB.price}</div>
-              <div style={st.detailLabel}>{JOB.priceType}</div>
+              <div style={st.detailValue}>{job.price}</div>
+              <div style={st.detailLabel}>{job.priceType}</div>
             </div>
           </div>
           <div style={st.detailItem}>
             <BarChartIcon />
             <div>
-              <div style={st.detailValue}>{JOB.level}</div>
-              <div style={st.detailLabel}>{JOB.levelSub}</div>
+              <div style={st.detailValue}>{job.level}</div>
+              <div style={st.detailLabel}>{job.levelSub}</div>
             </div>
           </div>
           <div style={st.detailItem}>
@@ -207,7 +248,7 @@ export default function JobDetail() {
         <div style={{ ...st.detailItem, marginBottom: 24 }}>
           <BriefcaseIcon />
           <div>
-            <div style={st.detailValue}>{JOB.projectType}</div>
+            <div style={st.detailValue}>{job.projectType}</div>
             <div style={st.detailLabel}>Project Type</div>
           </div>
         </div>
@@ -219,7 +260,7 @@ export default function JobDetail() {
           <h3 style={st.sectionTitle}>Skills and Expertise</h3>
           <p style={st.subLabel}>Mandatory skills</p>
           <div style={st.tagRow}>
-            {JOB.skills.map((skill) => (
+            {job.skills.map((skill) => (
               <Badge key={skill} variant="gray" style={{ fontSize: 12, padding: "5px 14px", borderRadius: borderRadius.pill, border: `1px solid ${colors.gray[200]}` }}>
                 {skill}
               </Badge>
@@ -233,11 +274,11 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={st.sectionTitle}>Activity on this job</h3>
           <div style={st.activityRow}>
-            <span style={st.activityItem}>Proposals: <strong>{JOB.activity.proposals}</strong></span>
-            <span style={st.activityItem}>Last viewed by client: <strong>{JOB.activity.lastViewed}</strong></span>
-            <span style={st.activityItem}>Interviewing: <strong>{JOB.activity.interviewing}</strong></span>
-            <span style={st.activityItem}>Invites sent: <strong>{JOB.activity.invitesSent}</strong></span>
-            <span style={st.activityItem}>Unanswered invites: <strong>{JOB.activity.unansweredInvites}</strong></span>
+            <span style={st.activityItem}>Proposals: <strong>{job.activity.proposals}</strong></span>
+            <span style={st.activityItem}>Last viewed by client: <strong>{job.activity.lastViewed}</strong></span>
+            <span style={st.activityItem}>Interviewing: <strong>{job.activity.interviewing}</strong></span>
+            <span style={st.activityItem}>Invites sent: <strong>{job.activity.invitesSent}</strong></span>
+            <span style={st.activityItem}>Unanswered invites: <strong>{job.activity.unansweredInvites}</strong></span>
           </div>
         </section>
 
@@ -247,9 +288,9 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={st.sectionTitle}>About the client</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span style={st.clientInfo}>Member since {JOB.client.memberSince}</span>
-            <span style={st.clientInfo}>{JOB.client.country}</span>
-            <span style={st.clientInfo}>{JOB.client.localTime}</span>
+            <span style={st.clientInfo}>Member since {job.client.memberSince}</span>
+            <span style={st.clientInfo}>{job.client.country}</span>
+            <span style={st.clientInfo}>{job.client.localTime}</span>
           </div>
         </section>
 
@@ -259,7 +300,7 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={st.sectionTitle}>Explore similar jobs on Upwork</h3>
           <div style={st.similarGrid}>
-            {JOB.similarJobs.map((job, i) => (
+            {job.similarJobs.map((job, i) => (
               <div key={i} style={st.similarCard}>
                 <a href="#" style={st.similarTitle}>{job.title}</a>
                 <p style={st.similarMeta}>{job.postedAgo}</p>
@@ -281,7 +322,7 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={{ ...st.sectionTitle, fontSize: 20, marginBottom: 20 }}>How it works</h3>
           <div style={st.howGrid}>
-            {JOB.howItWorks.map((item, i) => (
+            {job.howItWorks.map((item, i) => (
               <div key={i} style={st.howCard}>
                 <div style={st.howImgWrap}>
                   <img src={item.img} alt={item.title} style={st.howImg} />
@@ -306,7 +347,7 @@ export default function JobDetail() {
         <section style={st.section}>
           <h3 style={{ ...st.sectionTitle, fontSize: 20, marginBottom: 20 }}>About SajhaGIG</h3>
           <div style={st.statsGrid}>
-            {JOB.aboutStats.map((stat, i) => (
+            {job.aboutStats.map((stat, i) => (
               <div key={i}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                   {stat.hasStars && <span style={{ color: colors.star, fontSize: 14 }}>★★★★★</span>}
@@ -345,9 +386,9 @@ export default function JobDetail() {
 
         {/* Other open jobs by this Client */}
         <section style={{ ...st.section, marginBottom: 0 }}>
-          <h3 style={{ ...st.sectionTitle, fontSize: 16 }}>Other open jobs by this Client ({JOB.otherClientJobs.length})</h3>
+          <h3 style={{ ...st.sectionTitle, fontSize: 16 }}>Other open jobs by this Client ({job.otherClientJobs.length})</h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {JOB.otherClientJobs.map((job, i) => (
+            {job.otherClientJobs.map((job, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <a href="#" style={{ fontSize: 14, color: colors.accent, textDecoration: "underline" }}>{job.title}</a>
                 <span style={{ fontSize: 13, color: colors.gray[500] }}>{job.type}</span>

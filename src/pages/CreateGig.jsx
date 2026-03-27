@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
-const GIG_CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   "Graphic Design", "Web Development", "Mobile Development", "UI/UX Design",
   "Digital Marketing", "Content Writing", "Video & Animation", "Data Science",
 ];
 
-const SUBCATEGORIES = {
+const FALLBACK_SUBCATEGORIES = {
   "Graphic Design": ["Logo design", "Brand identity", "Illustration", "Business cards", "Social media design"],
   "Web Development": ["WordPress", "Landing page", "Full website", "E-commerce", "Web app"],
   "Mobile Development": ["iOS app", "Android app", "React Native", "Flutter", "App UI"],
@@ -20,6 +21,9 @@ const SUBCATEGORIES = {
 
 export default function CreateGig() {
   const navigate = useNavigate();
+  const [gigCategories, setGigCategories] = useState(FALLBACK_CATEGORIES);
+  const [subcategories, setSubcategories] = useState(FALLBACK_SUBCATEGORIES);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: "", category: "Graphic Design", subcategory: "Logo design", tags: "",
     basicName: "", basicPrice: "", basicDelivery: "", basicRevisions: "",
@@ -28,11 +32,52 @@ export default function CreateGig() {
     description: "", requirements: "",
   });
 
+  useEffect(() => {
+    api.get('/categories').then((data) => {
+      const cats = data.categories || [];
+      setGigCategories(cats.map((c) => c.name));
+      const subMap = {};
+      cats.forEach((c) => {
+        subMap[c.name] = (c.subcategories || []).map((sc) => sc.name);
+      });
+      setSubcategories((prev) => ({ ...prev, ...subMap }));
+      if (cats.length) {
+        const first = cats[0].name;
+        const firstSub = subMap[first]?.[0] || "";
+        setForm((f) => ({ ...f, category: first, subcategory: firstSub }));
+      }
+    }).catch(() => {});
+  }, []);
+
   const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const handleCategoryChange = (e) => {
     const cat = e.target.value;
-    setForm((f) => ({ ...f, category: cat, subcategory: SUBCATEGORIES[cat]?.[0] || "" }));
+    setForm((f) => ({ ...f, category: cat, subcategory: subcategories[cat]?.[0] || "" }));
+  };
+
+  const handlePublish = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/gigs', {
+        title: form.title,
+        category: form.category,
+        subcategory: form.subcategory,
+        searchTags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        description: form.description,
+        requirements: form.requirements,
+        packages: [
+          { tier: "basic", name: form.basicName, price: Number(form.basicPrice) || 0, deliveryDays: Number(form.basicDelivery) || 5, revisions: Number(form.basicRevisions) || 1 },
+          { tier: "standard", name: form.standardName, price: Number(form.standardPrice) || 0, deliveryDays: Number(form.standardDelivery) || 7, revisions: Number(form.standardRevisions) || 3 },
+          { tier: "premium", name: form.premiumName, price: Number(form.premiumPrice) || 0, deliveryDays: Number(form.premiumDelivery) || 10, revisions: Number(form.premiumRevisions) || -1 },
+        ],
+      });
+      navigate("/freelancer/dashboard");
+    } catch {
+      navigate("/freelancer/dashboard");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -57,13 +102,13 @@ export default function CreateGig() {
             <div style={s.fieldHalf}>
               <label style={s.label}>Category</label>
               <select style={s.select} value={form.category} onChange={handleCategoryChange}>
-                {GIG_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+                {gigCategories.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div style={s.fieldHalf}>
               <label style={s.label}>Subcategory</label>
               <select style={s.select} value={form.subcategory} onChange={update("subcategory")}>
-                {(SUBCATEGORIES[form.category] || []).map((sc) => <option key={sc}>{sc}</option>)}
+                {(subcategories[form.category] || []).map((sc) => <option key={sc}>{sc}</option>)}
               </select>
             </div>
           </div>
@@ -155,8 +200,8 @@ export default function CreateGig() {
           <button style={s.cancelBtn} onClick={() => navigate("/freelancer/dashboard")}>
             Cancel
           </button>
-          <button style={s.publishBtn} onClick={() => navigate("/freelancer/dashboard")}>
-            Publish Gig
+          <button style={s.publishBtn} onClick={handlePublish} disabled={submitting}>
+            {submitting ? "Publishing..." : "Publish Gig"}
           </button>
         </div>
       </div>

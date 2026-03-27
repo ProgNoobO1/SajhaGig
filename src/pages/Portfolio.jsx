@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout";
 import { StarRating } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 const PORTFOLIO_ITEMS = [
   { id: 1, title: "Razor Website Design", rating: 5.0, image: "https://picsum.photos/seed/razor-web/460/300" },
@@ -54,14 +56,30 @@ function PortfolioCard({ item }) {
 
 export default function Portfolio() {
   const [activeLabel, setActiveLabel] = useState("Portfolio");
+  const [items, setItems] = useState(PORTFOLIO_ITEMS);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/portfolio/${user.id}`).then((data) => {
+      if (data.items?.length) {
+        setItems(data.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          rating: item.rating || 5.0,
+          image: item.imageUrl || `https://picsum.photos/seed/portfolio${item.id}/460/300`,
+        })));
+      }
+    }).catch(() => {});
+  }, [user]);
 
   return (
     <DashboardLayout
       role="freelancer"
       activeLabel={activeLabel}
       onLinkClick={setActiveLabel}
-      profileName="John Smith"
-      profileEmail="walter@sample.com"
+      profileName={user?.firstName ? `${user.firstName} ${user.lastName}` : "John Smith"}
+      profileEmail={user?.email || "john@sample.com"}
     >
       <div style={s.sectionHeader}>
         <h3 style={s.sectionTitle}>Bookmarked Projects</h3>
@@ -69,7 +87,7 @@ export default function Portfolio() {
       </div>
 
       <div style={s.grid}>
-        {PORTFOLIO_ITEMS.map((item) => (
+        {items.map((item) => (
           <PortfolioCard key={item.id} item={item} />
         ))}
       </div>

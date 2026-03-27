@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { Badge } from "../components/ui";
 import { colors, borderRadius, shadows } from "../constants/theme";
+import api from "../api/client";
 
-const CATEGORIES = [
+const FALLBACK_CATEGORIES = [
   "Graphics & Design", "Digital Marketing", "Writing & Translation",
   "Video & Animation", "Music & Audio", "Programming & Tech",
   "Photography", "Business",
 ];
 
-const PROJECT_CARD = {
+const FALLBACK_CARD = {
+  id: 1,
   badge: "Web Dev",
   status: "Open",
   title: "Build a Restaurant Website for Thamel",
@@ -22,12 +24,10 @@ const PROJECT_CARD = {
   price: "₹8,674",
 };
 
-const CARDS = Array(5).fill(PROJECT_CARD);
-
 function ProjectCard({ card }) {
   const navigate = useNavigate();
   return (
-    <div style={s.card} onClick={() => navigate("/job/1")} role="button" tabIndex={0}>
+    <div style={s.card} onClick={() => navigate(`/job/${card.id}`)} role="button" tabIndex={0}>
       <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
         <Badge variant="blue">{card.badge}</Badge>
         <Badge variant="green">{card.status}</Badge>
@@ -50,11 +50,11 @@ function ProjectCard({ card }) {
   );
 }
 
-function CategoryBar() {
+function CategoryBar({ categories }) {
   const [active, setActive] = useState(0);
   return (
     <div style={s.categoryBar}>
-      {CATEGORIES.map((cat, i) => (
+      {categories.map((cat, i) => (
         <button key={cat} onClick={() => setActive(i)}
           style={{ ...s.catBtn, ...(active === i ? s.catBtnActive : {}) }}
         >{cat}</button>
@@ -63,24 +63,53 @@ function CategoryBar() {
   );
 }
 
-function CardSection({ title, highlight, bordered }) {
+function CardSection({ title, highlight, bordered, cards }) {
   return (
     <section style={{ ...s.section, ...(bordered ? s.borderedSection : {}) }}>
       <h2 style={s.sectionTitle}>
         {title} {highlight && <span style={s.sectionHighlight}>{highlight}</span>}
       </h2>
       <div style={s.cardGrid}>
-        {CARDS.map((card, i) => <ProjectCard key={i} card={card} />)}
+        {cards.map((card, i) => <ProjectCard key={i} card={card} />)}
       </div>
     </section>
   );
 }
 
 export default function FindWork() {
+  const [jobs, setJobs] = useState([]);
+  const [categories, setCategories] = useState(FALLBACK_CATEGORIES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/jobs').then((data) => {
+      const mapped = (data.jobs || []).map((j) => ({
+        id: j.id,
+        badge: j.category || "Web Dev",
+        status: j.status === "open" ? "Open" : j.status,
+        title: j.title,
+        description: j.description?.slice(0, 90) + "..." || "",
+        weeks: Math.ceil((j.budgetMax || 8674) / 3000),
+        proposals: j.proposalCount || 0,
+        tags: j.skills || [],
+        price: `₹${Number(j.budgetMax || 0).toLocaleString()}`,
+      }));
+      setJobs(mapped);
+    }).catch(() => {
+      setJobs(Array(5).fill(FALLBACK_CARD));
+    }).finally(() => setLoading(false));
+
+    api.get('/categories').then((data) => {
+      setCategories(data.categories.map((c) => c.name));
+    }).catch(() => {});
+  }, []);
+
+  const cards = jobs.length ? jobs : Array(5).fill(FALLBACK_CARD);
+
   return (
     <div style={s.page}>
       <Header />
-      <CategoryBar />
+      <CategoryBar categories={categories} />
 
       <main style={s.main}>
         {/* Hero Section */}
@@ -109,7 +138,7 @@ export default function FindWork() {
             </div>
           </div>
           <div style={s.cardGrid}>
-            {CARDS.map((card, i) => <ProjectCard key={i} card={card} />)}
+            {cards.map((card, i) => <ProjectCard key={i} card={card} />)}
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 14 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", background: colors.accentDark, display: "inline-block" }} />
@@ -118,15 +147,15 @@ export default function FindWork() {
           </div>
         </div>
 
-        <CardSection title="Most popular Projects in" highlight="App Design" bordered />
+        <CardSection title="Most popular Projects in" highlight="App Design" bordered cards={cards} />
 
         <section style={s.section}>
           <h2 style={s.sectionTitle}>Projects you may like</h2>
           <div style={s.cardGrid}>
-            {CARDS.map((c, i) => <ProjectCard key={i} card={c} />)}
+            {cards.map((c, i) => <ProjectCard key={i} card={c} />)}
           </div>
           <div style={{ ...s.cardGrid, marginTop: 16 }}>
-            {CARDS.map((c, i) => <ProjectCard key={"r" + i} card={c} />)}
+            {cards.map((c, i) => <ProjectCard key={"r" + i} card={c} />)}
           </div>
         </section>
 
@@ -141,7 +170,7 @@ export default function FindWork() {
             <a href="#" style={{ color: colors.accent, fontSize: 13, textDecoration: "none", fontWeight: 600 }}>See All ›</a>
           </div>
           <div style={s.cardGrid}>
-            {CARDS.map((c, i) => <ProjectCard key={i} card={c} />)}
+            {cards.map((c, i) => <ProjectCard key={i} card={c} />)}
           </div>
         </section>
       </main>

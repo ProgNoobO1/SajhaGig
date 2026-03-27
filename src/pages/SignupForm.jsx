@@ -1,15 +1,37 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FormInput } from "../components/ui";
+import { useAuth } from "../context/AuthContext";
 
 export default function SignupForm({ role = "client" }) {
   const navigate = useNavigate();
+  const { signup } = useAuth();
   const isClient = role === "client";
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const heading = isClient ? "Become A Client" : "Become A Freelancer";
   const subtitle = isClient
     ? "Create Your Client Account"
     : "Create Your Freelancing Account";
+
+  const handleSignup = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const user = await signup({ firstName, lastName, email, password, role });
+      navigate(user.role === "freelancer" ? "/freelancer/dashboard" : "/client/dashboard");
+    } catch (err) {
+      setError(err.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="signup-container w-full h-full flex fixed top-0 bottom-0">
@@ -20,19 +42,23 @@ export default function SignupForm({ role = "client" }) {
           <h2 className="text-[36px] font-bold mb-1">{heading}</h2>
           <p className="text-gray-400 text-[15px] mb-8">{subtitle}</p>
 
-          <FormInput label="First Name" type="text" placeholder="firstname" icon="user" />
-          <FormInput label="Last Name" type="text" placeholder="lastname" icon="user" />
-          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" />
-          <FormInput label="Password" type="password" placeholder="password" className="mb-8" />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-md px-4 py-2 mb-4">
+              {error}
+            </div>
+          )}
+
+          <FormInput label="First Name" type="text" placeholder="firstname" icon="user" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <FormInput label="Last Name" type="text" placeholder="lastname" icon="user" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <FormInput label="Password" type="password" placeholder="password" className="mb-8" value={password} onChange={(e) => setPassword(e.target.value)} />
 
           <button
-            onClick={() => {
-              localStorage.setItem("sajhagig_role", role);
-              navigate(isClient ? "/client/dashboard" : "/freelancer/dashboard");
-            }}
-            className="bg-blue-800 text-white w-full h-[44px] rounded-md hover:bg-blue-900 active:bg-blue-700 text-sm font-semibold"
+            onClick={handleSignup}
+            disabled={loading}
+            className="bg-blue-800 text-white w-full h-[44px] rounded-md hover:bg-blue-900 active:bg-blue-700 text-sm font-semibold disabled:opacity-50"
           >
-            Create Account
+            {loading ? "Creating..." : "Create Account"}
           </button>
         </div>
       </div>

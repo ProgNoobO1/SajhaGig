@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/login.jsx";
 import Signup from "./pages/signup.jsx";
@@ -21,6 +22,7 @@ import ClientProfile from "./pages/ClientProfile.jsx";
 
 function App() {
   return (
+    <AuthProvider>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
@@ -45,6 +47,7 @@ function App() {
         <Route path="/client/profile" element={<ClientProfile />} />
       </Routes>
     </BrowserRouter>
+    </AuthProvider>
   );
 }
 

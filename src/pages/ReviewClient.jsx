@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "../components/layout";
 import { ReviewCard, Pagination } from "../components/ui";
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
-const REVIEWS = [
+const FALLBACK_REVIEWS = [
   { id: 1, name: "marvinachi", country: "United States", flag: "🇺🇸", rating: 4, timeAgo: "2 months ago", comment: "Great work! I wanted a video to showcase my fitness app and the designer delivered an excellent job and on time. Highly satisfied, thank you!" },
   { id: 2, name: "marvinachi", country: "United States", flag: "🇺🇸", rating: 5, timeAgo: "2 months ago", comment: "Great work! I wanted a video to showcase my fitness app and the designer delivered an excellent job and on time. Highly satisfied, thank you!" },
   { id: 3, name: "marvinachi", country: "United States", flag: "🇺🇸", rating: 4, timeAgo: "2 months ago", comment: "Great work! I wanted a video to showcase my fitness app and the designer delivered an excellent job and on time. Highly satisfied, thank you!" },
@@ -12,6 +14,25 @@ const REVIEWS = [
 export default function ReviewClient() {
   const [activeLabel, setActiveLabel] = useState("Reviews");
   const [currentPage, setCurrentPage] = useState(1);
+  const [reviews, setReviews] = useState(FALLBACK_REVIEWS);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) return;
+    api.get(`/reviews/user/${user.id}`).then((data) => {
+      if (data.reviews?.length) {
+        setReviews(data.reviews.map((r, i) => ({
+          id: r.id || i + 1,
+          name: r.reviewerName || "User",
+          country: r.reviewerCountry || "United States",
+          flag: r.reviewerFlag || "🇺🇸",
+          rating: r.rating,
+          timeAgo: r.timeAgo || "recently",
+          comment: r.comment,
+        })));
+      }
+    }).catch(() => {});
+  }, [user]);
 
   return (
     <DashboardLayout
@@ -21,7 +42,7 @@ export default function ReviewClient() {
     >
       <div style={s.reviewsPanel}>
         <h2 style={s.title}>Reviews</h2>
-        {REVIEWS.map((review) => (
+        {reviews.map((review) => (
           <ReviewCard key={review.id} {...review} />
         ))}
         <Pagination current={currentPage} total={10} onPageChange={setCurrentPage} />
