@@ -10,7 +10,21 @@
       "Bash(git push:*)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"/Co-Authored-By: Claude/d\"' e0f60b7..HEAD 2>&1)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'sed \"\"/Co-Authored-By: Claude/d\"\"' e0f60b7..HEAD)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(mysql:*)",
+      "Bash(brew install:*)",
+      "Bash(brew services:*)",
+      "Bash(lsof -ti:5000)",
+      "Bash(xargs kill:*)",
+      "Bash(lsof -ti:3000)",
+      "Bash(kill -9 22415)",
+      "Bash(kill -9 22993)",
+      "Bash(lsof:*)",
+      "mcp__plugin_claude-mem_mcp-search__search",
+      "mcp__plugin_claude-mem_mcp-search__get_observations",
+      "Bash(curl -s http://localhost:5001/health)",
+      "Bash(curl -s http://localhost:3000)",
+      "Bash(curl:*)"
     ]
   }
 }
