@@ -1275,21 +1275,25 @@ npm run dev
 ## Implementation Phases
 
 ### Phase 1: Foundation 🟢 COMPLETED
-- [x] Create `server/` directory with package.json
+- [x] Create `server/` directory with `package.json` and `.env.example`
 - [x] Create `server/config/db.js` — MySQL connection pool
 - [x] Create `server/config/env.js` — env loader
 - [x] Create `server/index.js` — Express app with CORS, JSON, error handler
+- [x] Create `server/middleware/validate.js` — request validation helper
+- [x] Create `server/utils/pagination.js` — pagination helper
 - [x] Create `server/db/schema.sql` — all 21 CREATE TABLE statements
 - [x] Create `server/db/seed.sql` — all INSERT statements (14 users, 10 gigs, 30 packages, 8 jobs, 6 proposals, 8 projects, 6 chats, 18 messages, 13 reviews, 9 portfolio items, 10 transactions, 8 categories, 40 subcategories)
 - [x] Create `server/db/migrate.js` — migration runner
-- [x] Update root package.json with scripts and proxy
-- [x] Update .gitignore
+- [x] Update root `package.json` with scripts, proxy, and `concurrently`
+- [x] Update `.gitignore` for server/.env and server/node_modules
 
 ### Phase 2: Auth System 🟢 COMPLETED
-- [x] Create `server/utils/hash.js` and `server/utils/jwt.js`
-- [x] Create `server/middleware/auth.js`
-- [x] Create `server/middleware/errorHandler.js`
-- [x] Create auth controller + routes (signup, login, me)
+- [x] Create `server/utils/hash.js` — bcrypt hash/compare helpers
+- [x] Create `server/utils/jwt.js` — JWT sign/verify helpers
+- [x] Create `server/middleware/auth.js` — JWT verification middleware
+- [x] Create `server/middleware/errorHandler.js` — global error handler
+- [x] Create `server/controllers/auth.controller.js` — signup, login, me handlers
+- [x] Create `server/routes/auth.routes.js` — auth route definitions
 - **Test:**
   - [ ] `POST /api/auth/signup` — create new client with `{ firstName, lastName, email, password, role: "client" }` → expect 201 + JWT token
   - [ ] `POST /api/auth/signup` — duplicate email → expect 409 error
@@ -1376,20 +1380,28 @@ npm run dev
   - [ ] `DELETE /api/portfolio/1` — with owner token → expect 200
 
 ### Phase 9: Frontend Wiring 🟢 COMPLETED
-- [x] Create `src/api/client.js`
-- [x] Create `src/context/AuthContext.jsx`
-- [x] Wire Login.jsx and SignupForm.jsx to auth API
-- [x] Wire BrowseGigs.jsx to gigs API
-- [x] Wire GigDetail.jsx to gig detail API
-- [x] Wire FindWork.jsx to jobs API
-- [x] Wire JobDetail.jsx to job detail API
-- [x] Wire CreateGig.jsx to categories + create gig API
-- [x] Wire both dashboards to dashboard API
-- [x] Wire ClientProjects.jsx and FreelancerProjects.jsx
-- [x] Wire Chat.jsx to chat/messages API
-- [x] Wire both profile pages to users API
-- [x] Wire review and portfolio pages
-- [x] All pages use fallback data when API is unavailable
+- [x] Create `src/api/client.js` — fetch wrapper with JWT auth headers
+- [x] Create `src/context/AuthContext.jsx` — auth state provider with login/signup/logout
+- [x] Wrap `App.jsx` with `<AuthProvider>`
+- [x] Wire `Header.jsx` — show user initials when logged in, "Login" link when not
+- [x] Wire `login.jsx` — `POST /api/auth/login` via `useAuth().login()`
+- [x] Wire `SignupForm.jsx` — `POST /api/auth/signup` via `useAuth().signup()`
+- [x] Wire `BrowseGigs.jsx` — `GET /api/gigs` + `GET /api/categories`
+- [x] Wire `GigDetail.jsx` — `GET /api/gigs/:id` (packages, FAQs, reviews, seller)
+- [x] Wire `FindWork.jsx` — `GET /api/jobs` + `GET /api/categories`
+- [x] Wire `JobDetail.jsx` — `GET /api/jobs/:id` (summary, skills, activity, client)
+- [x] Wire `CreateGig.jsx` — `GET /api/categories` + `POST /api/gigs`
+- [x] Wire `ClientDashboard.jsx` — `GET /api/dashboard/client` + `POST /api/jobs` (modal)
+- [x] Wire `FreelancerDashboard.jsx` — `GET /api/dashboard/freelancer`
+- [x] Wire `ClientProjects.jsx` — `GET /api/projects`
+- [x] Wire `FreelancerProjects.jsx` — `GET /api/proposals/freelancer/:id`
+- [x] Wire `Chat.jsx` — `GET /api/chats` + `POST /api/chats/:id/messages`
+- [x] Wire `FreelancerProfile.jsx` — `GET /api/users/:id` + `GET /api/reviews/user/:id`
+- [x] Wire `ClientProfile.jsx` — `GET /api/users/:id` + `GET /api/reviews/given/:id`
+- [x] Wire `ReviewClient.jsx` — `GET /api/reviews/user/:id`
+- [x] Wire `ReviewFreelancer.jsx` — `GET /api/reviews/user/:id`
+- [x] Wire `Portfolio.jsx` — `GET /api/portfolio/:userId`
+- [x] All 19 pages use graceful fallback data when API is unavailable
 - **Test (end-to-end):**
   - [ ] Start both servers with `npm run dev` — React on :3000, Express on :5000
   - [ ] Login page: login with `sulav@sajhagig.com` / `password123` → redirects to freelancer dashboard
@@ -1416,18 +1428,18 @@ npm run dev
 
 ## Progress Summary
 
-| Phase | Status | Files Created |
-|-------|--------|---------------|
-| Phase 1: Foundation | 🟢 Complete | 9 files (package.json, .env, config/, db/, utils/) |
-| Phase 2: Auth System | 🟢 Complete | 4 files (auth controller, routes, middleware, utils) |
-| Phase 3: Users & Profiles | 🟢 Complete | 2 files (users controller + routes) |
+| Phase | Status | Files Created/Modified |
+|-------|--------|------------------------|
+| Phase 1: Foundation | 🟢 Complete | 12 files (package.json, .env.example, config/db.js, config/env.js, index.js, db/schema.sql, db/seed.sql, db/migrate.js, middleware/validate.js, utils/pagination.js, root package.json, .gitignore) |
+| Phase 2: Auth System | 🟢 Complete | 6 files (utils/hash.js, utils/jwt.js, middleware/auth.js, middleware/errorHandler.js, auth.controller.js, auth.routes.js) |
+| Phase 3: Users & Profiles | 🟢 Complete | 2 files (users.controller.js, users.routes.js) |
 | Phase 4: Categories & Gigs | 🟢 Complete | 4 files (categories + gigs controllers + routes) |
 | Phase 5: Jobs & Proposals | 🟢 Complete | 4 files (jobs + proposals controllers + routes) |
 | Phase 6: Projects & Dashboard | 🟢 Complete | 4 files (projects + dashboard controllers + routes) |
-| Phase 7: Chat & Messages | 🟢 Complete | 2 files (messages controller + routes) |
+| Phase 7: Chat & Messages | 🟢 Complete | 2 files (messages.controller.js, messages.routes.js) |
 | Phase 8: Reviews & Portfolio | 🟢 Complete | 4 files (reviews + portfolio controllers + routes) |
-| Phase 9: Frontend Wiring | 🟢 Complete | 2 new files (api/client.js, context/AuthContext.jsx) + 15 pages wired |
-| **Total** | **9/9 phases done** | **38 files created/modified** |
+| Phase 9: Frontend Wiring | 🟢 Complete | 2 new files (api/client.js, context/AuthContext.jsx) + 19 files modified (App.jsx, Header.jsx, Login, Signup + 15 page components) |
+| **Total** | **9/9 phases done** | **62 files created/modified** |
 
 ---
 

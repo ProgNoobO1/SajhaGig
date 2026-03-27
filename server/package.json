@@ -6,7 +6,15 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "migrate": "node db/migrate.js",
-    "seed": "node db/migrate.js --seed"
+    "seed": "node db/migrate.js --seed",
+    "test": "DB_NAME=sajhagig_test jest --runInBand --forceExit",
+    "test:phase2": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase2",
+    "test:phase3": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase3",
+    "test:phase4": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase4",
+    "test:phase5": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase5",
+    "test:phase6": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase6",
+    "test:phase7": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase7",
+    "test:phase8": "DB_NAME=sajhagig_test jest --runInBand --forceExit phase8"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,6 +26,8 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
-    "nodemon": "^3.1.4"
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.2.2"
   }
 }

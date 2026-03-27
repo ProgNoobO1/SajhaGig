@@ -30,6 +30,10 @@ app.get('/api/health', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-app.listen(env.port, () => {
-  console.log(`Server running on port ${env.port}`);
-});
+if (require.main === module) {
+  app.listen(env.port, () => {
+    console.log(`Server running on port ${env.port}`);
+  });
+}
+
+module.exports = app;
