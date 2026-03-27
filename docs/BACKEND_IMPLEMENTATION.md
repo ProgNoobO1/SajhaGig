@@ -1191,11 +1191,11 @@ useEffect(() => {
 
 ### server/.env
 ```
-PORT=5000
+PORT=5001
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
-DB_PASSWORD=your_password
+DB_PASSWORD=
 DB_NAME=sajhagig
 JWT_SECRET=sajhagig_jwt_secret_key_2024
 JWT_EXPIRES_IN=7d
@@ -1231,7 +1231,7 @@ NODE_ENV=development
 ### Root package.json additions
 ```json
 {
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5001",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -1403,7 +1403,7 @@ npm run dev
 - [x] Wire `Portfolio.jsx` — `GET /api/portfolio/:userId`
 - [x] All 19 pages use graceful fallback data when API is unavailable
 - **Test (end-to-end):**
-  - [ ] Start both servers with `npm run dev` — React on :3000, Express on :5000
+  - [ ] Start both servers with `npm run dev` — React on :3000, Express on :5001
   - [ ] Login page: login with `sulav@sajhagig.com` / `password123` → redirects to freelancer dashboard
   - [ ] Login page: login with `ram@sajhagig.com` / `password123` → redirects to client dashboard
   - [ ] Signup page: create new account → redirects to appropriate dashboard
@@ -1453,7 +1453,8 @@ npm run dev
 - **Graceful fallback**: All frontend pages render with hardcoded fallback data if the backend is unavailable. The UI works identically with or without the server running — API data simply replaces fallback data on successful fetch
 - **No breaking changes**: All original React component interfaces remain unchanged. API data is mapped to existing prop shapes in `useEffect` hooks, so components like `GigCard`, `ProjectCard`, `ReviewCard`, etc. required zero modifications
 - **Auth flow**: Token stored in `localStorage` as `sajhagig_token`. AuthContext validates on mount via `GET /api/auth/me`. Header shows user initials when logged in, "Login" link when not
-- **Proxy**: React dev server proxies `/api/*` requests to Express on port 5000 via `"proxy"` in root `package.json`
+- **Proxy**: React dev server proxies `/api/*` requests to Express on port 5001 via `"proxy"` in root `package.json`
+- **Port note**: Port 5001 is used instead of 5000 because macOS ControlCenter/AirPlay Receiver occupies port 5000
 
 ## Verification Checklist
 
@@ -1473,14 +1474,14 @@ npm run db:migrate
 # 5. Start both servers
 npm run dev
 # → React on http://localhost:3000
-# → Express on http://localhost:5000
+# → Express on http://localhost:5001
 
 # 6. Test login with seed user
 # Email: sulav@sajhagig.com / Password: password123 (freelancer)
 # Email: ram@sajhagig.com / Password: password123 (client)
 
 # 7. Verify API endpoints
-curl http://localhost:5000/api/gigs          # Should return 10 gigs
-curl http://localhost:5000/api/jobs          # Should return 8 jobs
-curl http://localhost:5000/api/categories    # Should return 8 categories with subcategories
+curl http://localhost:5001/api/gigs          # Should return gigs
+curl http://localhost:5001/api/jobs          # Should return jobs
+curl http://localhost:5001/api/categories    # Should return categories with subcategories
 ```

@@ -40,6 +40,7 @@ export default function FormInput({
   value,
   onChange,
   className = "",
+  required = false,
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
@@ -48,7 +49,7 @@ export default function FormInput({
   return (
     <div className={`flex flex-col mb-4 ${className}`}>
       {label && (
-        <label className="text-[13px] text-gray-700 mb-1">{label}</label>
+        <label className="text-[13px] text-gray-700 mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
       )}
       <div className="relative">
         <input

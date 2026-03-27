@@ -120,16 +120,10 @@ export default function Home() {
           <span className="cursor-pointer hover:text-blue-200 transition duration-300">Freelance Now</span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="flex items-center gap-2 border border-white px-6 py-2 rounded-lg hover:bg-white hover:text-blue-800 transition duration-300 text-sm font-semibold">
-            <Link
-  to="/signup"
-  
->
-  <span>Join</span>
-
-</Link>
+          <Link to="/signup" className="flex items-center gap-2 border border-white px-6 py-2 rounded-lg hover:bg-white hover:text-blue-800 transition duration-300 text-sm font-semibold">
+            <span>Join</span>
             <FaUsers />
-          </button>
+          </Link>
         </div>
       </nav>
 

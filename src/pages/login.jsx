@@ -13,6 +13,26 @@ export default function Login() {
 
   const handleLogin = async () => {
     setError("");
+    if (!email.trim() && !password.trim()) {
+      setError("Please enter your email and password");
+      return;
+    }
+    if (!email.trim()) {
+      setError("Please enter your email address");
+      return;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+    if (!password.trim()) {
+      setError("Please enter your password");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
     setLoading(true);
     try {
       const user = await login(email, password);
@@ -52,8 +72,8 @@ export default function Login() {
             </div>
           )}
 
-          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <FormInput label="Password" type="password" placeholder="password" className="mb-8" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <FormInput label="Email" type="email" placeholder="name@gmail.com" icon="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <FormInput label="Password" type="password" placeholder="password" className="mb-8" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
           <button
             onClick={handleLogin}

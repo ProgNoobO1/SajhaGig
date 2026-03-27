@@ -121,7 +121,7 @@ export default function Chat() {
       if (data.chats?.length) {
         setContacts(data.chats.map((c) => ({
           id: c.id,
-          name: c.otherUser?.name || c.name,
+          name: c.otherUser?.name || c.name || "Unknown",
           avatar: c.otherUser?.avatar || `https://i.pravatar.cc/40?img=${c.id}`,
           online: c.otherUser?.online || false,
           lastMsg: c.lastMessage || "",
@@ -143,7 +143,7 @@ export default function Chat() {
   }, [activeContact, messages]);
 
   const filteredContacts = contacts.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+    (c.name || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const currentContact = contacts.find((c) => c.id === activeContact);
